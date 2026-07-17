@@ -14,9 +14,6 @@ class Arrow private(val tag: String,
                         val dom: Node,
                         val cod: Node) extends Drawable:
 
-  val color: Color = Color.Black
-  val width: Double = 2
-  private val arrSize: Double = 8 //refactor
   private val displayText: Text = {
     val res = Text(tag)
     res.font = Font("Serif", 20)
@@ -40,8 +37,8 @@ class Arrow private(val tag: String,
     gc.fillText(displayText.text(), len / 2 - bounds.width/2, -bounds.height/2 +bounds.maxY)
     gc.strokeLine(0, 0, len, 0)
     gc.fillPolygon(
-      Array(len, len - arrSize, len - arrSize, len),
-      Array(0, -arrSize, arrSize, 0),
+      Array(len, len - ARR_SIZE, len - ARR_SIZE, len),
+      Array(0, -ARR_SIZE, ARR_SIZE, 0),
       4
     )
     gc.restore()
@@ -73,15 +70,15 @@ class Arrow private(val tag: String,
     gc.fillText(displayText.text(), -5 -bounds.width/2, -35 -bounds.height/2 +bounds.maxY)
     gc.rotate(math.toDegrees(tangentAngle))
     gc.fillPolygon(
-      Array(0.0, -arrSize, -arrSize, 0.0),
-      Array(0.0, -arrSize, arrSize, 0.0),
+      Array(0.0, -ARR_SIZE, -ARR_SIZE, 0.0),
+      Array(0.0, -ARR_SIZE, ARR_SIZE, 0.0),
       4
     )
     gc.restore()
 
   override def draw(gc: GraphicsContext): Unit =
-    gc.stroke = color
-    gc.lineWidth = width
+    gc.stroke = COLOR
+    gc.lineWidth = WIDTH
 
     if !(dom eq cod) then
       drawStraight(gc)
@@ -93,8 +90,11 @@ class Arrow private(val tag: String,
   override protected def removeRoutine(drawables: ArrayBuffer[Drawable]): Unit = ()
 
 object Arrow:
-  val SMOOTHNESS_FACTOR: Double = 100
-  val HALO: Double = 10
+  private val SMOOTHNESS_FACTOR: Double = 100
+  private val HALO: Double = 10
+  private val COLOR: Color = Color.Black
+  private val WIDTH: Double = 2
+  private val ARR_SIZE: Double = 8 //refactor
 
   def apply(tag: String, dom: Node, cod: Node) = new Arrow(tag, dom, cod)
 

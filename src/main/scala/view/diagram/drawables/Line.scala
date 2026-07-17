@@ -3,21 +3,19 @@ package view.diagram.drawables
 import scalafx.Includes.*
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
+import view.diagram.drawables.Line.*
 import view.diagram.drawables.nodes.Node
 
 import scala.collection.mutable.ArrayBuffer
 
 class Line(private val anchor: Node) extends Drawable:
 
-  var x, y = .0
-  val color: Color = Color.Red
-  val width: Double = 2
+  var x, y: Double = 0
   private val dotted: List[Double] = List(2, 8)
 
-
   override def draw(gc: GraphicsContext): Unit =
-    gc.stroke = color
-    gc.lineWidth = width
+    gc.stroke = COLOR
+    gc.lineWidth = WIDTH
     gc.setLineDashes(dotted*)
     gc.strokeLine(anchor.x, anchor.y, x, y)
     gc.setLineDashes()
@@ -27,6 +25,9 @@ class Line(private val anchor: Node) extends Drawable:
   override protected def removeRoutine(drawables: ArrayBuffer[Drawable]): Unit = ()
 
 object Line:
+  private val COLOR: Color = Color.Red
+  private val WIDTH: Double = 2
+
   def apply(anchor: Node): Line =
     new Line(anchor)
 

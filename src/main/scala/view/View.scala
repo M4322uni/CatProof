@@ -1,3 +1,4 @@
 package view
 
-object View
+object View:
+  ???

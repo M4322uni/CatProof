@@ -52,6 +52,7 @@ class Node(var x: Double,
   override protected def addRoutine(drawables: ArrayBuffer[Drawable]): Unit = ()
 
   override protected def removeRoutine(drawables: ArrayBuffer[Drawable]): Unit = ()
+    //all arrows should be deleted
 
 object Node:
   def apply(x: Double, y: Double, tag: String): Node =
