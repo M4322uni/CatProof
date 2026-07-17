@@ -13,7 +13,7 @@ class Line(private val anchor: Node) extends Drawable:
   var x, y: Double = 0
   private val dotted: List[Double] = List(2, 8)
 
-  override def draw(gc: GraphicsContext): Unit =
+  override def drawActual(gc: GraphicsContext, highlighted: Boolean): Unit =
     gc.stroke = COLOR
     gc.lineWidth = WIDTH
     gc.setLineDashes(dotted*)

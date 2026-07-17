@@ -1,6 +1,7 @@
 package view.diagram
 
 import scalafx.Includes.*
+import scalafx.animation.AnimationTimer
 import scalafx.geometry.Pos
 import scalafx.scene.Cursor
 import scalafx.scene.canvas.Canvas
@@ -8,6 +9,7 @@ import scalafx.scene.control.{ScrollPane, TextField}
 import scalafx.scene.input.MouseButton.{Middle, Primary, Secondary}
 import scalafx.scene.input.{KeyCode, MouseEvent}
 import scalafx.scene.layout.Pane
+import view.diagram.Diagram.{CANVAS_HEIGHT, CANVAS_WIDTH, GROWTH_MARGIN, MAX_HEIGHT, MAX_WIDTH}
 import view.diagram.drawables.nodes.Node
 import view.diagram.drawables.{Arrow, Drawable, Line}
 
@@ -15,13 +17,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.mutable.ArrayBuffer
 
 class Diagram extends ScrollPane:
-  private var canvasWidth: Double = 540 // updated when object exits bounds
-  private var canvasHeight: Double = 540 // ditto
+
   private val base = new Pane()
   private val canvas = new Canvas()
   private val drawables: ArrayBuffer[Drawable] = ArrayBuffer()
   private val selected: ArrayBuffer[Drawable] = ArrayBuffer()
   private var activeLine: Option[Line] = None
+  private val refresh = AnimationTimer {_ => redraw()}
 
   private abstract class NamePop(
                                   prompt: String,
@@ -65,14 +67,18 @@ class Diagram extends ScrollPane:
   base.children.add(canvas)
   base.style = "-fx-background-color: white;"
   canvas.style = "-fx-background-color: white;"
-  base.prefHeight = canvasHeight
-  base.prefWidth = canvasWidth
+  base.prefHeight = CANVAS_HEIGHT
+  base.prefWidth = CANVAS_WIDTH
   canvas.widthProperty() <== base.width
   canvas.heightProperty() <== base.height
 
   canvas.onKeyPressed = ke =>
-    if ke.isControlDown && ke.code == KeyCode.Z && drawables.nonEmpty
-    then deleteLastDrawable()
+    if ke.isControlDown && ke.code == KeyCode.Z
+      then deleteLastDrawable()
+    else if ke.code == KeyCode.Delete
+      then
+        selected.foreach(_.removeFrom(drawables))
+        clear(selected)
 
   canvas.onMousePressed = { me =>
     canvas.requestFocus()
@@ -89,14 +95,14 @@ class Diagram extends ScrollPane:
         nameEnter(pop)
 
       case Middle =>
-        select(me, false)
+        select(me, false, false)
 
         selected match
           case ArrayBuffer() =>
           case _ => scene().cursor = Cursor.ClosedHand
 
       case Primary =>
-        select(me, me.isControlDown)
+        select(me, me.isControlDown, me.isControlDown)
 
         if !me.isControlDown then
           selected match
@@ -120,7 +126,17 @@ class Diagram extends ScrollPane:
       selected match
         case ArrayBuffer(n: Node) =>
           n.x = me.x
+          if me.x >= canvas.width() - GROWTH_MARGIN && canvas.width() < MAX_WIDTH
+          then
+            base.prefWidth = base.prefWidth() + GROWTH_MARGIN
+            vvalue = 1
+
           n.y = me.y
+          if me.y >= base.height() - GROWTH_MARGIN && canvas.height() < MAX_HEIGHT
+          then
+            base.prefHeight = base.prefHeight() + GROWTH_MARGIN
+            hvalue = 1
+
         case _ =>
 
     else if me.isPrimaryButtonDown then
@@ -135,7 +151,7 @@ class Diagram extends ScrollPane:
 
   canvas.onMouseReleased = { me =>
     scene().cursor = Cursor.Default
-    if !me.isControlDown then selected.clear()
+    if !me.isControlDown then clear(selected)
 
     val lineToFinalize = activeLine
 
@@ -143,7 +159,7 @@ class Diagram extends ScrollPane:
 
     lineToFinalize match
       case Some(line @ Line(d1)) =>
-        select(me, true)
+        select(me, true, me.isControlDown)
         selected match
           case ArrayBuffer(d2: Node) =>
             val pop = new NamePop(
@@ -170,18 +186,23 @@ class Diagram extends ScrollPane:
     me.consume()
   }
 
-  // add canc -> wipe selected (+ nodes recursively delete their arrows)
+  // add canc -> wipe selected
 
-  def redraw(): Unit =
+  private def redraw(): Unit =
     val gc = canvas.graphicsContext2D
     gc.clearRect(0, 0, canvas.width(), canvas.height())
     drawables.foreach(_.draw(gc))
 
-  private def deleteLastDrawable(): Unit =
-    drawables.remove(drawables.size - 1)
+  def startRefresh(): Unit = refresh.start()
 
-  private def select(me: MouseEvent, add: Boolean): Unit =
-    if !add then selected.clear()
+  def stopRefresh(): Unit = refresh.stop()
+
+  private def deleteLastDrawable(): Unit =
+    if drawables.nonEmpty then
+      drawables.remove(drawables.size - 1)
+
+  private def select(me: MouseEvent, add: Boolean, highlight: Boolean): Unit =
+    if !add then clear(selected)
     val pick = drawables.collectFirst {
       case n: Node
         if math.abs(me.x - n.x) <= n.halfWidth &&
@@ -191,8 +212,20 @@ class Diagram extends ScrollPane:
     pick match
       case Some(x) =>
         if !selected.contains(x)
-        then selected.addOne(x)
+        then
+          selected.addOne(x)
+          if highlight then x.highlight()
       case _ =>
 
+  private def clear(selected: ArrayBuffer[Drawable]): Unit =
+    selected.foreach(_.unhighlight())
+    selected.clear()
+
 object Diagram:
-  ???
+  val CANVAS_WIDTH: Double = 400
+  val CANVAS_HEIGHT: Double = 400
+  private val GROWTH_MARGIN = 10
+  private val MAX_WIDTH = 2500
+  private val MAX_HEIGHT = 2500
+
+  def apply(): Diagram = new Diagram

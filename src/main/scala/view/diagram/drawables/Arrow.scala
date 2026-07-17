@@ -76,8 +76,8 @@ class Arrow private(val tag: String,
     )
     gc.restore()
 
-  override def draw(gc: GraphicsContext): Unit =
-    gc.stroke = COLOR
+  override def drawActual(gc: GraphicsContext, highlighted: Boolean): Unit =
+    gc.stroke = if highlighted then HIGHLIGHT_COLOR else NORMAL_COLOR
     gc.lineWidth = WIDTH
 
     if !(dom eq cod) then
@@ -92,7 +92,8 @@ class Arrow private(val tag: String,
 object Arrow:
   private val SMOOTHNESS_FACTOR: Double = 100
   private val HALO: Double = 10
-  private val COLOR: Color = Color.Black
+  private val NORMAL_COLOR: Color = Color.Black
+  private val HIGHLIGHT_COLOR: Color = Color.Tomato
   private val WIDTH: Double = 2
   private val ARR_SIZE: Double = 8 //refactor
 

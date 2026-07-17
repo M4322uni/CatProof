@@ -1,11 +1,11 @@
 package view.diagram.drawables.nodes
 
-import view.diagram.drawables.Drawable
-
+import view.diagram.drawables.{Arrow, Drawable}
 import scalafx.Includes.*
 import scalafx.scene.canvas.GraphicsContext
 import scalafx.scene.paint.Color
 import scalafx.scene.text.{Font, Text}
+import view.diagram.drawables.nodes.Node.{HIGHLIGHT_COLOR, NORMAL_COLOR}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -20,7 +20,6 @@ class Node(var x: Double,
     res
   }
   private val bounds = displayText.layoutBounds()
-  var color: Color = Color.Black
 
   //  override def produce(commuteSection: Set[Arrow]): Set[Arrow]
   //    = component.produce(commuteSection)
@@ -41,8 +40,8 @@ class Node(var x: Double,
   def halfHeight: Double =
     displayText.layoutBounds().height / 2
 
-  override def draw(gc: GraphicsContext): Unit =
-    gc.fill = color
+  override def drawActual(gc: GraphicsContext, highlighted: Boolean): Unit =
+    gc.fill = if highlighted then HIGHLIGHT_COLOR else NORMAL_COLOR
     gc.font = displayText.font()
     //gc.setTextAntialiasing(scalafx.scene.text.TextAntialiasing.ON)
     gc.fillText(displayText.text(),
@@ -51,10 +50,16 @@ class Node(var x: Double,
 
   override protected def addRoutine(drawables: ArrayBuffer[Drawable]): Unit = ()
 
-  override protected def removeRoutine(drawables: ArrayBuffer[Drawable]): Unit = ()
-    //all arrows should be deleted
+  override protected def removeRoutine(drawables: ArrayBuffer[Drawable]): Unit =
+    drawables.filterInPlace {
+      case Arrow(_, _, this) | Arrow(_, this, _) => false
+      case _ => true
+    }
 
 object Node:
+  var NORMAL_COLOR: Color = Color.Black
+  var HIGHLIGHT_COLOR: Color = Color.Tomato
+
   def apply(x: Double, y: Double, tag: String): Node =
     new Node(x, y, tag)
 
