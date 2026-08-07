@@ -2,6 +2,7 @@ package view.diagram
 
 import scalafx.Includes.*
 import scalafx.animation.AnimationTimer
+import scalafx.beans.binding.Bindings
 import scalafx.geometry.Pos
 import scalafx.scene.Cursor
 import scalafx.scene.canvas.Canvas
@@ -9,7 +10,7 @@ import scalafx.scene.control.{ScrollPane, TextField}
 import scalafx.scene.input.MouseButton.{Middle, Primary, Secondary}
 import scalafx.scene.input.{KeyCode, MouseEvent}
 import scalafx.scene.layout.Pane
-import view.diagram.Diagram.{CANVAS_HEIGHT, CANVAS_WIDTH, GROWTH_MARGIN, MAX_HEIGHT, MAX_WIDTH}
+import view.diagram.Diagram.*
 import view.diagram.drawables.nodes.Node
 import view.diagram.drawables.{Arrow, Drawable, Line}
 
@@ -67,8 +68,14 @@ class Diagram extends ScrollPane:
   base.children.add(canvas)
   base.style = "-fx-background-color: white;"
   canvas.style = "-fx-background-color: white;"
-  base.prefHeight = CANVAS_HEIGHT
-  base.prefWidth = CANVAS_WIDTH
+  base.minWidth <== Bindings.createDoubleBinding(
+    () => viewportBounds().getWidth,
+    viewportBounds
+  )
+  base.minHeight <== Bindings.createDoubleBinding(
+    () => viewportBounds().getHeight,
+    viewportBounds
+  )
   canvas.widthProperty() <== base.width
   canvas.heightProperty() <== base.height
 
@@ -222,8 +229,8 @@ class Diagram extends ScrollPane:
     selected.clear()
 
 object Diagram:
-  val CANVAS_WIDTH: Double = 400
-  val CANVAS_HEIGHT: Double = 400
+//  val CANVAS_WIDTH: Double = 400
+//  val CANVAS_HEIGHT: Double = 400
   private val GROWTH_MARGIN = 10
   private val MAX_WIDTH = 2500
   private val MAX_HEIGHT = 2500

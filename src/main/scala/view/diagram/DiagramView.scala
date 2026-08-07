@@ -20,8 +20,6 @@ object DiagramView extends TabPane:
 
     text = s"Diagram $number"
     content = diagram
-    prefWidth = CANVAS_WIDTH
-    prefHeight = CANVAS_HEIGHT
 
     def focus(): Unit =
       diagram.startRefresh()
