@@ -2,7 +2,7 @@ package view.diagram
 
 import scalafx.Includes.*
 import scalafx.scene.control.{Tab, TabPane}
-import view.diagram.Diagram.*
+import view.View.{WINDOW_HEIGTH, WINDOW_WIDTH}
 
 import scala.collection.mutable
 
@@ -51,4 +51,7 @@ object DiagramView extends TabPane:
       case x : DiagramTab => x.unfocus()
       case _ =>
   }
+
+  prefWidth = WINDOW_WIDTH * (2 / 3.0)
+  prefHeight = WINDOW_HEIGTH
 
