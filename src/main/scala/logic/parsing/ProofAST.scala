@@ -1,8 +1,8 @@
 package logic.parsing
 
-import utils.NonBlankString
+import utils.*
 
-case class Text(assumption: Seq[Expression], goals: Seq[Expression], proof: Proof)
+case class Text(assumption: Seq[Expression], goals: Seq[Expression], proof: Seq[ProofStep])
 
 enum Expression:
   case EqualityObj(left: ConstructedObj, right: ConstructedObj)
@@ -28,3 +28,6 @@ enum TypeMorph:
 
 case class Category(name: NonBlankString)
 
+case class Morphism(name: MorphismName)
+
+case class Object(name: ObjectName)
