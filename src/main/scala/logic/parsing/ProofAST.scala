@@ -31,3 +31,6 @@ case class Category(name: NonBlankString)
 case class Morphism(name: MorphismName)
 
 case class Object(name: ObjectName)
+
+case class ProofStep():
+  ???
