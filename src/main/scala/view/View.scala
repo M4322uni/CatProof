@@ -47,6 +47,7 @@ object View extends JFXApp3:
           -fx-background-radius: 4;
           -fx-border-color: transparent;
           """
+
         menu.children.add(new Button("Diao"))
         structure.center = tabs
         structure.left = leftStructure
