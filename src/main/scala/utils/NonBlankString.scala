@@ -9,3 +9,4 @@ object NonBlankString:
     else kernel
 
   given Conversion[NonBlankString, String] = identity
+  given Conversion[String, NonBlankString] = apply
