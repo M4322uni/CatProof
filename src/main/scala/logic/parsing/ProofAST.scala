@@ -2,35 +2,31 @@ package logic.parsing
 
 import utils.*
 
-case class Text(assumption: Seq[Expression], goals: Seq[Expression], proof: Seq[ProofStep])
+case class Text(assumption: Seq[Formula], goals: Seq[Formula], proof: Seq[ProofStep])
+
+enum Formula:
+  case Include(diagram: NonEmptyString)
+  case Expression(exp: logic.parsing.Expression)
 
 enum Expression:
-  case EqualityObj(left: ConstructedObj, right: ConstructedObj)
-  case EqualityMorph(left: ConstructedMorph, right: ConstructedMorph)
-  case JudgementObj(obj: ConstructedObj, typ: TypeObj)
-  case JudgementMorph(morph: ConstructedMorph, typ: TypeMorph)
+  case Equality(left: Concatenation, right: Concatenation)
+  case Judgement(obj: Concatenation, typ: Type)
 
-enum ConstructedObj:
-  case BaseObj(base: logic.parsing.Object)
-  case Domain(morph: ConstructedMorph)
-  case Codomain(morph: ConstructedMorph)
+case class Concatenation(constructions: Seq[Construction]):
+  require(constructions.nonEmpty)
 
-enum ConstructedMorph:
-  case BaseMorph(base: Morphism)
-  case Identity(obj: ConstructedObj)
-  case Composition(left: ConstructedMorph, right: ConstructedMorph)
+enum Construction:
+  case Atomic(name: NonEmptyString)
+  case Dom(morph: Concatenation)
+  case Cod(morph: Concatenation)
+  case Id(obj: Construction)
 
-enum TypeObj:
-  case TypeCat(cat: Category)
+enum Type:
+  case Category(cat: logic.parsing.Category)
+  case HomSet(cat: logic.parsing.Category, dom: Concatenation, cod: Concatenation)
 
-enum TypeMorph:
-  case HomSet(cat: Category, dom: ConstructedObj, cod: ConstructedObj)
-
-case class Category(name: NonBlankString)
-
-case class Morphism(name: MorphismName)
-
-case class Object(name: ObjectName)
+case class Category(name: NonEmptyString):
+  require(!name.matches(""".*\(.*\).*"""))
 
 case class ProofStep(rule: Rule, lines: Seq[Positive])
 
