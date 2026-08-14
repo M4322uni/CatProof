@@ -2,11 +2,6 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="CatProof" />
-    <profile name="sbt 2" modules="CatProof.main,CatProof.test">
-      <parameters>
-        <parameter value="-Yexplicit-nulls" />
-      </parameters>
-    </profile>
+    <profile name="sbt 1" modules="CatProof,CatProof.main,CatProof.test" />
   </component>
 </project>

@@ -3,7 +3,7 @@ scalaVersion := "3.8.4"
 lazy val root = rootProject
   .settings(
     name := "CatProof",
-    scalacOptions += "-Yexplicit-nulls",
+//    scalacOptions += "-Yexplicit-nulls",
     libraryDependencies ++= Seq(
       "org.scalafx" %% "scalafx" % "26.0.0-R38",
       "com.lihaoyi" %% "fastparse" % "3.1.1",
