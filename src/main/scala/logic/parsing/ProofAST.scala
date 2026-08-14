@@ -32,5 +32,9 @@ case class Morphism(name: MorphismName)
 
 case class Object(name: ObjectName)
 
-case class ProofStep():
+case class ProofStep(rule: Rule, lines: Seq[Positive])
+
+enum Rule:
+  case TRANSITIVITY
+  case COMPOSITION
   ???
