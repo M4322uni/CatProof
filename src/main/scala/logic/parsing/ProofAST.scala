@@ -6,10 +6,10 @@ case class Text(assumption: Seq[Formula], goals: Seq[Formula], proof: Seq[ProofS
 
 enum Formula:
   case Include(diagram: NonEmptyString)
-  case Expression(exp: logic.parsing.Expression)
+  case Expr(exp: Expression)
 
 enum Expression:
-  case Equality(left: Concatenation, right: Concatenation)
+  case Equation(left: Concatenation, right: Concatenation)
   case Judgement(obj: Concatenation, typ: Type)
 
 case class Concatenation(constructions: Seq[Construction]):
@@ -22,8 +22,8 @@ enum Construction:
   case Id(obj: Construction)
 
 enum Type:
-  case Category(cat: logic.parsing.Category)
-  case HomSet(cat: logic.parsing.Category, dom: Concatenation, cod: Concatenation)
+  case Cat(cat: Category)
+  case HomSet(cat: Category, dom: Concatenation, cod: Concatenation)
 
 case class Category(name: NonEmptyString):
   require(!name.matches(""".*\(.*\).*"""))
