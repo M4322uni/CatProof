@@ -18,7 +18,7 @@ object DiagramView extends TabPane:
   class DiagramTab(number: Int) extends Tab:
     private val diagram = Diagram()
 
-    text = s"Diagram $number"
+    text = s"Diagram_$number" //Name
     content = diagram
 
     def focus(): Unit =

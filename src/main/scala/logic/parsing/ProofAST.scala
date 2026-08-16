@@ -5,7 +5,7 @@ import utils.*
 case class Text(assumption: Seq[Formula], goals: Seq[Formula], proof: Seq[ProofStep])
 
 enum Formula:
-  case Include(diagram: NonEmptyString)
+  case Include(diagram: Name)
   case Expr(exp: Expression)
 
 enum Expression:
@@ -16,7 +16,7 @@ case class Concatenation(constructions: Seq[Construction]):
   require(constructions.nonEmpty)
 
 enum Construction:
-  case Atomic(name: NonEmptyString)
+  case Atomic(name: Name)
   case Dom(morph: Concatenation)
   case Cod(morph: Concatenation)
   case Id(obj: Construction)
@@ -24,9 +24,9 @@ enum Construction:
 enum Type:
   case Cat(cat: Category)
   case HomSet(cat: Category, dom: Concatenation, cod: Concatenation)
-
-case class Category(name: NonEmptyString):
-  require(!name.matches(""".*\(.*\).*"""))
+  
+enum Category:
+  case Base(name: Name)
 
 case class ProofStep(rule: Rule, lines: Seq[Positive])
 

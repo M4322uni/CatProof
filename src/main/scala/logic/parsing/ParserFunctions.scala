@@ -2,8 +2,10 @@ package logic.parsing
 
 import fastparse.*
 import NoWhitespace.*
+import logic.parsing.Construction.*
 import logic.parsing.Expression.*
 import logic.parsing.Formula.*
+import logic.parsing.Type.*
 import utils.*
 
 def start[$ : P]: P[Text] =
@@ -29,20 +31,33 @@ def expression[$ : P]: P[Expression] =
     .map { (c: Concatenation, t: Type) => Judgement(c, t) }
   )
   
-def ttype[$ : P]: P[Type] = ???
+def ttype[$ : P]: P[Type] =
+  P( category ~ (indent_blank ~ "(" ~ indent_blank ~ concatenation ~ indent_blank
+    ~ "," ~ indent_blank ~ concatenation ~ indent_blank ~ ")").? )
+    .map { (cat: Category, opt: Option[(Concatenation, Concatenation)])
+    => opt match
+      case Some((c1: Concatenation, c2: Concatenation)) => HomSet(cat, c1, c2)
+      case _ => Cat(cat)}
   
 def concatenation[$ : P]: P[Concatenation] =
   P( construction ~ (indent_blank ~ "+" ~ indent_blank ~ construction).repX )
     .map { (c: Construction, s: Seq[Construction]) => Concatenation(c +: s) }
 
 def construction[$ : P]: P[Construction] =
-  ???
+  P( name.map{ Atomic.apply } 
+    | "dom(" ~ indent_blank ~ concatenation.map { Dom.apply } ~ indent_blank ~ ")" 
+    | "cod(" ~ indent_blank ~ concatenation.map { Cod.apply } ~ indent_blank ~ ")"
+    | "id(" ~ indent_blank ~ construction.map { Id.apply } ~ indent_blank ~ ")")
+
+def category[$ : P]: P[Category] = ???
+
+def name[$ : P]: P[Name] = ???
 
 def indent_blank[$ : P]: P[Unit] = ???
 
 def include[$ : P]: P[Formula.Include] =
-  P( "<include " ~ CharPred(c => c != '>' && (!c.isWhitespace || c == ' ')).repX(1).! ~ ">" )
-    .map { Include(_) }
+  P( "<include " ~ name ~ ">" )
+    .map { Include.apply }
 
 def proof[$ : P]: P[Seq[ProofStep]] =
   P( ("\tuse " ~ rule ~ " " ~ reference ~ space_trail ~ "\n").repX )
