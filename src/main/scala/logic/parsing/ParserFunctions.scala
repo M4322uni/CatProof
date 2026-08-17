@@ -10,20 +10,20 @@ import logic.parsing.Type.*
 import utils.*
 
 def start[$ : P]: P[Text] =
-  P(newBlank ~/ "assumptions:" ~ formula ~ newBlank ~
-      "goals:" ~ formula ~ newBlank ~
-      "proof:" ~ proof ~ blank)
+  P(newBlank ~ "assumptions:" ~ indent_blank ~ formula ~ newBlank ~
+      "goals:" ~ indent_blank ~ formula ~ newBlank ~
+      "proof:" ~ indent_blank ~ proof ~ blank ~ End)
     .map { (ass: Seq[Formula], goal: Seq[Formula], proof: Seq[ProofStep])
       => Text(ass, goal, proof) }
 
 def newBlank[$ : P]: P[Unit] =
-  P( (CharsWhile(_ == '\n') | (CharsWhileIn("\t ") ~ "\n")).repX )
+  P( CharsWhile(_ == '\n') | (CharsWhileIn("\t ") ~ "\n") ).repX
 
 def blank[$ : P]: P[Unit] =
   P( CharsWhileIn("\n\t ", 0) )
 
 def formula[$ : P]: P[Seq[Formula]] =
-  P( ("\t" ~ (include | expression.map{ Formula.Expr(_) }) ~ space_trail ~ "\n").repX )
+  P( (include | expression.map{ Expr.apply }) ~ indent_blank ).repX
 
 def expression[$ : P]: P[Expression] =
   P( (concatenation ~ indent_blank ~ "=" ~ indent_blank ~ concatenation)
@@ -45,10 +45,10 @@ def concatenation[$ : P]: P[Concatenation] =
     .map { (c: Construction, s: Seq[Construction]) => Concatenation(c +: s) }
 
 def construction[$ : P]: P[Construction] =
-  P( name.map{ Atomic.apply } 
-    | "dom(" ~ indent_blank ~ concatenation.map { Dom.apply } ~ indent_blank ~ ")" 
+  P( "dom(" ~ indent_blank ~ concatenation.map { Dom.apply } ~ indent_blank ~ ")"
     | "cod(" ~ indent_blank ~ concatenation.map { Cod.apply } ~ indent_blank ~ ")"
-    | "id(" ~ indent_blank ~ construction.map { Id.apply } ~ indent_blank ~ ")")
+    | "id(" ~ indent_blank ~ construction.map { Id.apply } ~ indent_blank ~ ")"
+    | name.map{ Atomic.apply } )
 
 def category[$ : P]: P[Category] =
   P( name ).map { Base.apply }
@@ -58,27 +58,51 @@ def name[$ : P]: P[Name] =
     .map { (s1: String, s2: String) => s1 + s2 }
 
 def indent_blank[$ : P]: P[Unit] =
-  P( ("\t" | " " | "\n" ~ (" " | "\n").repX ~ "\t").repX )
+  P( "\t" | " " | "\n" ~ (" " | "\n").repX ~ "\t" ).repX
 
 def include[$ : P]: P[Formula.Include] =
   P( "<include " ~ name ~ ">" )
     .map { Include.apply }
 
 def proof[$ : P]: P[Seq[ProofStep]] =
-  P( ("\tuse " ~ rule ~ " " ~ reference ~ space_trail ~ "\n").repX )
+  P( ("use " ~ rule ~ " " ~ reference ~ indent_blank).repX )
     .map { (str: Seq[(Rule, Seq[Positive])]) =>
       str.map { (rule: Rule, refs: Seq[Positive]) => ProofStep(rule, refs) } }
   
 def rule[$ : P]: P[Rule] =
-  P( "composition".map {_ => Rule.COMPOSITION} |
-    "transitivity".map {_ => Rule.TRANSITIVITY} )
+  P( "composition".map {_ => Rule.COMPOSITION}
+    | "transitivity".map {_ => Rule.TRANSITIVITY} )
 
 def reference[$ : P]: P[Seq[Positive]] =
   P( "with " ~ line ~ (", " ~ line).repX )
     .map { (p: Positive, s: Seq[Positive]) => p +: s }
   
 def line[$ : P]: P[Positive] =
-  P( CharIn("1-9").! ~ CharsWhileIn("0-9").! )
+  P( CharIn("1-9").! ~ CharsWhileIn("0-9", 0).! )
     .map { (s1: String, s2: String) => (s1 + s2).toInt }
 
-def space_trail[$ : P]: P[Unit] = ???
+def space_trail[$ : P]: P[Unit] =
+  P( CharsWhileIn("\t ", 0) )
+
+def space_trail4[$ : P]: P[Unit] =
+  P( (CharsWhileIn(" ", 4) | CharsWhileIn(" ", 0) ~ "\t") ~ space_trail )
+
+@main def testIndentBlankEmpty(): Unit =
+  val input =
+    """assumptions:
+      |	d = h
+      |	e = j
+      |	k : K k : K
+      |goals:
+      |proof:
+      |""".stripMargin
+
+  println(input.replace("\t", "\\t").replace("\n", "\\n\n"))
+
+  fastparse.parse(input, start(using _)) match
+    case Parsed.Success(result, index) =>
+      println(s"SUCCESS @ $index")
+      println(result)
+
+    case failure: Parsed.Failure =>
+      println(failure.trace().longMsg)

@@ -33,4 +33,4 @@ case class ProofStep(rule: Rule, lines: Seq[Positive])
 enum Rule:
   case TRANSITIVITY
   case COMPOSITION
-  ???
+  // ...
