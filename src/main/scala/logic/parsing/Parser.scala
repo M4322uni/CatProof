@@ -9,8 +9,6 @@ import logic.parsing.Formula.*
 import logic.parsing.Type.*
 import utils.*
 
-import scala.annotation.targetName
-
 class Parser(text: String):
 
   private def getLine(until: Int): Positive =
@@ -105,18 +103,19 @@ class Parser(text: String):
     val FakeTree(assumption: Seq[(Int, Formula)],
       goals: Seq[(Int, Formula)],
       proof: Seq[(Int, ProofStep)]) = tree
-    val (assumption2: Seq[(Positive, Formula)], 
+    val (assumption2: Seq[(Positive, Formula)],
       lastIndex: Int,
       lastLine: Positive) = fix(assumption)
-    val (goals2: Seq[(Positive, Formula)], 
+    val (goals2: Seq[(Positive, Formula)],
       lastIndex2: Int,
       lastLine2: Positive) = fix(goals, lastIndex, lastLine)
     val (proof2: Seq[(Positive, ProofStep)], _, _) = fix(proof, lastIndex2, lastLine2)
     Tree(assumption2, goals2, proof2)
 
   private def fix[T](s: Seq[(Int, T)], lastIndex: Int = 0, lastLine: Positive = 1): (Seq[(Positive, T)], Int, Positive) =
+    val strip: Seq[Int] = s.map { _._1 }
     val seq: Seq[(Int, T)] =
-      (lastIndex +: s.map { _._1 }).zip(s).map {
+      (lastIndex +: strip ).zip(s).map {
       case (p1, (p2, f)) => (count(p2, p1), f)
     }
     val sums: Seq[Positive] = seq.scanLeft(lastLine) {
@@ -124,7 +123,7 @@ class Parser(text: String):
     }.tail
     (seq.zip(sums).map {
       case ((_, f), p) => (p, f)
-    }, s.map { _._1 }.lastOption.getOrElse(lastIndex)
+    }, strip.lastOption.getOrElse(lastIndex)
       ,sums.lastOption.getOrElse(lastLine))
 
   private def count(until: Int, from: Int = 0): Int =
