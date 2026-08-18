@@ -57,11 +57,15 @@ def name[$ : P]: P[Name] =
   P( CharIn("A-Za-z_").! ~ CharsWhileIn("A-Za-z0-9_", 0).! )
     .map { (s1: String, s2: String) => s1 + s2 }
 
+def indent_bound[$ : P]: P[Unit] =
+  P( (CharsWhile(_ == ' ', 4)
+    | CharsWhile(_ == ' ', 0) ~ ("\t" | "\n" ~ indent_bound)) ~ indent_blank )
+
 def indent_blank[$ : P]: P[Unit] =
-  P( "\t" | " " | "\n" ~ (" " | "\n").repX ~ "\t" ).repX
+  P( CharIn("\t ") ~ indent_blank | "\n" ~ indent_bound | Pass )
 
 def hard_indent[$ : P]: P[Unit] =
-  P( CharsWhile(_ == ' ', 0) ~ "\n" ~ (" " | "\n").repX ~ "\t" ~ indent_blank )
+  P( CharIn("\t ") ~ hard_indent | "\n" ~ indent_bound )
 
 def include[$ : P]: P[Formula.Include] =
   P( "<include " ~ name ~ ">" )
@@ -87,20 +91,19 @@ def line[$ : P]: P[Positive] =
 def space_trail[$ : P]: P[Unit] =
   P( CharsWhileIn("\t ", 0) )
 
-def space_trail4[$ : P]: P[Unit] =
-  P( (CharsWhileIn(" ", 4) | CharsWhileIn(" ", 0) ~ "\t") ~ space_trail )
-
 @main def testIndentBlankEmpty(): Unit =
   val input =
     """assumptions:
-      |	d = h
-      |	e = j
       |
-      |	k : K
+      | 	 d = h
+      |    e = j
+      |
+      |    k : K
       |
       |
       |
-      |	     k : K
+      |    k : K
+      |
       |
       |
       |
