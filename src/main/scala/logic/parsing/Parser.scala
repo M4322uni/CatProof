@@ -80,7 +80,7 @@ class Parser(text: String):
       .map { Include.apply }
 
   private def proof[$ : P]: P[Seq[(Int, ProofStep)]] =
-    P( (hard_indent ~ Index ~ IgnoreCase("use ") ~ rule ~ " " ~ reference).repX )
+    P( (hard_indent ~ Index ~ IgnoreCase("use") ~ indent_blank ~ rule ~ indent_blank ~ reference).repX )
       .map { (str: Seq[(Int, Rule, Seq[Positive])]) =>
         str.map { (arg: Int, rule: Rule, refs: Seq[Positive]) => (arg, ProofStep(rule, refs)) } }
 
@@ -89,7 +89,7 @@ class Parser(text: String):
       | IgnoreCase("transitivity").map {_ => Rule.TRANSITIVITY} )
 
   private def reference[$ : P]: P[Seq[Positive]] =
-    P( IgnoreCase("with ") ~ line ~ (", " ~ line).repX )
+    P( IgnoreCase("with") ~ indent_blank ~ line ~ ("," ~ indent_blank ~ line).repX )
       .map { (p: Positive, s: Seq[Positive]) => p +: s }
 
   private def line[$ : P]: P[Positive] =
@@ -123,8 +123,8 @@ class Parser(text: String):
     }.tail
     (seq.zip(sums).map {
       case ((_, f), p) => (p, f)
-    }, strip.lastOption.getOrElse(lastIndex)
-      ,sums.lastOption.getOrElse(lastLine))
+    }, strip.lastOption.getOrElse(lastIndex),
+      sums.lastOption.getOrElse(lastLine))
 
   private def count(until: Int, from: Int = 0): Int =
     text.slice(from, until).count(_ == '\n')
@@ -163,7 +163,7 @@ object Parser:
         |
         |goals:
         |proof:
-        |    USE TRANSITIVITY WITH 1, 2
+        |    USETRANSITIVITYWITH1,2
         |""".stripMargin
 
     println(input.replace("\t", "\\t").replace("\n", "\\n\n"))
