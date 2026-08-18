@@ -10,9 +10,9 @@ import logic.parsing.Type.*
 import utils.*
 
 def start[$ : P]: P[Text] =
-  P(newBlank ~ "assumptions:" ~ indent_blank ~ formula ~ newBlank ~
-      "goals:" ~ indent_blank ~ formula ~ newBlank ~
-      "proof:" ~ indent_blank ~ proof ~ blank ~ End)
+  P(newBlank ~ "assumptions:" ~ formula ~ newBlank ~
+      "goals:" ~ formula ~ newBlank ~
+      "proof:" ~ proof ~ blank ~ End)
     .map { (ass: Seq[Formula], goal: Seq[Formula], proof: Seq[ProofStep])
       => Text(ass, goal, proof) }
 
@@ -23,7 +23,7 @@ def blank[$ : P]: P[Unit] =
   P( CharsWhileIn("\n\t ", 0) )
 
 def formula[$ : P]: P[Seq[Formula]] =
-  P( (include | expression.map{ Expr.apply }) ~ indent_blank ).repX
+  P( hard_indent ~ (include | expression.map{ Expr.apply }) ).repX
 
 def expression[$ : P]: P[Expression] =
   P( (concatenation ~ indent_blank ~ "=" ~ indent_blank ~ concatenation)
@@ -60,12 +60,15 @@ def name[$ : P]: P[Name] =
 def indent_blank[$ : P]: P[Unit] =
   P( "\t" | " " | "\n" ~ (" " | "\n").repX ~ "\t" ).repX
 
+def hard_indent[$ : P]: P[Unit] =
+  P( CharsWhile(_ == ' ', 0) ~ "\n" ~ (" " | "\n").repX ~ "\t" ~ indent_blank )
+
 def include[$ : P]: P[Formula.Include] =
   P( "<include " ~ name ~ ">" )
     .map { Include.apply }
 
 def proof[$ : P]: P[Seq[ProofStep]] =
-  P( ("use " ~ rule ~ " " ~ reference ~ indent_blank).repX )
+  P( (indent_blank ~ "use " ~ rule ~ " " ~ reference).repX )
     .map { (str: Seq[(Rule, Seq[Positive])]) =>
       str.map { (rule: Rule, refs: Seq[Positive]) => ProofStep(rule, refs) } }
   
@@ -92,7 +95,18 @@ def space_trail4[$ : P]: P[Unit] =
     """assumptions:
       |	d = h
       |	e = j
-      |	k : K k : K
+      |
+      |	k : K
+      |
+      |
+      |
+      |	     k : K
+      |
+      |
+      |
+      |
+      |
+      |
       |goals:
       |proof:
       |""".stripMargin
