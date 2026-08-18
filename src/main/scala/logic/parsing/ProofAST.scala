@@ -2,7 +2,13 @@ package logic.parsing
 
 import utils.*
 
-case class Text(assumption: Seq[Formula], goals: Seq[Formula], proof: Seq[ProofStep])
+case class FakeTree(assumption: Seq[(Int, Formula)],
+                    goals: Seq[(Int, Formula)],
+                    proof: Seq[(Int, ProofStep)])
+
+case class Tree(assumption: Seq[(Positive, Formula)],
+                goals: Seq[(Positive, Formula)],
+                proof: Seq[(Positive, ProofStep)])
 
 enum Formula:
   case Include(diagram: Name)
