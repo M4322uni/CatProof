@@ -75,12 +75,15 @@ class Parser(text: String):
   private def hard_indent[$ : P]: P[Unit] =
     P( CharIn("\t ") ~ hard_indent | "\n" ~ indent_bound )
 
+  private def space_indent[$ : P]: P[Unit] =
+    P( CharIn("\t ") ~ indent_blank | "\n" ~ indent_bound )
+
   private def include[$ : P]: P[Formula.Include] =
     P( "<include " ~ name ~ ">" )
       .map { Include.apply }
 
   private def proof[$ : P]: P[Seq[(Int, ProofStep)]] =
-    P( (hard_indent ~ Index ~ IgnoreCase("use") ~ indent_blank ~ rule ~ indent_blank ~ reference).repX )
+    P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ rule ~ space_indent ~ reference).repX )
       .map { (str: Seq[(Int, Rule, Seq[Positive])]) =>
         str.map { (arg: Int, rule: Rule, refs: Seq[Positive]) => (arg, ProofStep(rule, refs)) } }
 
@@ -89,7 +92,7 @@ class Parser(text: String):
       | IgnoreCase("transitivity").map {_ => Rule.TRANSITIVITY} )
 
   private def reference[$ : P]: P[Seq[Positive]] =
-    P( IgnoreCase("with") ~ indent_blank ~ line ~ ("," ~ indent_blank ~ line).repX )
+    P( IgnoreCase("with") ~ space_indent ~ line ~ ("," ~ space_indent ~ line).repX )
       .map { (p: Positive, s: Seq[Positive]) => p +: s }
 
   private def line[$ : P]: P[Positive] =
@@ -163,7 +166,13 @@ object Parser:
         |
         |goals:
         |proof:
-        |    USETRANSITIVITYWITH1,2
+        |
+        |    USE
+        |    TRANSITIVITY
+        |    WITH 1, 2
+        |    USE
+        |    TRANSITIVITY
+        |    WITH 1, 2
         |""".stripMargin
 
     println(input.replace("\t", "\\t").replace("\n", "\\n\n"))
