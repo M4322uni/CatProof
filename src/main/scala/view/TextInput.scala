@@ -4,7 +4,9 @@ import scalafx.Includes.*
 import org.fxmisc.richtext.CodeArea
 import org.fxmisc.richtext.LineNumberFactory
 import View.{WINDOW_HEIGTH, WINDOW_WIDTH}
+import logic.derivation.Proof
 import org.fxmisc.flowless.VirtualizedScrollPane
+import scalafx.scene.input.{KeyCode, KeyEvent}
 
 object TextInput extends VirtualizedScrollPane(
     new CodeArea:
@@ -17,4 +19,16 @@ object TextInput extends VirtualizedScrollPane(
         -fx-border-width: 1px;
         -fx-border-radius: 2px;
         """)
-    )
+    ):
+
+  addEventFilter(KeyEvent.KeyPressed, event =>
+    if event.controlDown && event.code == KeyCode.S then
+      post()
+      event.consume()
+  )
+
+  private def post(): Unit =
+    try
+      Terminal.display(Proof(getContent.getText)().toString)
+    catch
+      case f: IllegalArgumentException => Terminal.display(f.getMessage)

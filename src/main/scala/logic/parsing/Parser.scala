@@ -27,7 +27,7 @@ class Parser(text: String):
     P( CharsWhile(_ == '\n') | (CharsWhileIn("\t ") ~ "\n") ).repX
 
   private def blank[$ : P]: P[Unit] =
-    P( CharsWhileIn("\t\n ") )
+    P( CharsWhileIn("\t\n ", 0) )
 
   private def formula[$ : P]: P[Seq[(Int, Formula)]] =
     P( hard_indent ~ Index ~ (include | expression.map{ Expr.apply }) )
@@ -147,35 +147,35 @@ class Parser(text: String):
 object Parser:
   def apply(text: String) = new Parser(text)
 
-  @main def testIndentBlankEmpty(): Unit =
-    val input =
-      """assumptions:
-        |
-        | 	 d = h
-        |    e = j
-        |
-        |    k : K(A, B)
-        |
-        |
-        |
-        |    k : K
-        |
-        |
-        |
-        |
-        |
-        |
-        |
-        |goals:
-        |proof:
-        |
-        |    USE
-        |    TRANSITIVITY
-        |    WITH 1, 2
-        |    USE
-        |    TRANSITIVITY
-        |    WITH 1, 2
-        |""".stripMargin
-
-    println(input.replace("\t", "\\t").replace("\n", "\\n\n"))
-    println(Parser(input)())
+//  @main def testIndentBlankEmpty(): Unit =
+//    val input =
+//      """assumptions:
+//        |
+//        | 	 d = h
+//        |    e = j
+//        |
+//        |    k : K(A, B)
+//        |
+//        |
+//        |
+//        |    k : K
+//        |
+//        |
+//        |
+//        |
+//        |
+//        |
+//        |
+//        |goals:
+//        |proof:
+//        |
+//        |    USE
+//        |    TRANSITIVITY
+//        |    WITH 1, 2
+//        |    USE
+//        |    TRANSITIVITY
+//        |    WITH 1, 2
+//        |""".stripMargin
+//
+//    println(input.replace("\t", "\\t").replace("\n", "\\n\n"))
+//    println(Parser(input)())
