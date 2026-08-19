@@ -132,15 +132,17 @@ class Parser(text: String):
   private def count(until: Int, from: Int = 0): Int =
     text.slice(from, until).count(_ == '\n')
 
-  def apply(): Unit =
-    fastparse.parse(text, start(using _)) match
-      case Parsed.Success(result, index) =>
-        val fixed: Tree = fix(result)
-        println(s"SUCCESS @ $index")
-        println(fixed)
+  private def errorPretty(fail: Parsed.Failure): String =
+    //TODO
+    fail.msg
 
-      case failure: Parsed.Failure =>
-        println(failure.trace().longMsg)
+  def apply(): Tree =
+    fastparse.parse(text, start(using _)) match
+      case Parsed.Success(result, _) =>
+        fix(result)
+
+      case f: Parsed.Failure =>
+        throw IllegalArgumentException(errorPretty(f))
 
 object Parser:
   def apply(text: String) = new Parser(text)
@@ -176,4 +178,4 @@ object Parser:
         |""".stripMargin
 
     println(input.replace("\t", "\\t").replace("\n", "\\n\n"))
-    Parser(input)()
+    println(Parser(input)())
