@@ -15,9 +15,9 @@ class Parser(text: String):
     text.take(until+1).count(_ == '\n') + 1
 
   private def start[$ : P]: P[FakeTree] =
-    P(newBlank ~ "assumptions:" ~ formula ~ newBlank ~
-        "goals:" ~ formula ~ newBlank ~
-        "proof:" ~ proof ~ blank ~ End)
+    P(newBlank ~ IgnoreCase("assumptions:") ~ formula ~ newBlank ~
+        IgnoreCase("goals:") ~ formula ~ newBlank ~
+        IgnoreCase("proof:") ~ proof ~ blank ~ End)
       .map { (ass: Seq[(Int, Formula)],
               goal: Seq[(Int, Formula)],
               proof: Seq[(Int, ProofStep)])
@@ -146,36 +146,3 @@ class Parser(text: String):
 
 object Parser:
   def apply(text: String) = new Parser(text)
-
-//  @main def testIndentBlankEmpty(): Unit =
-//    val input =
-//      """assumptions:
-//        |
-//        | 	 d = h
-//        |    e = j
-//        |
-//        |    k : K(A, B)
-//        |
-//        |
-//        |
-//        |    k : K
-//        |
-//        |
-//        |
-//        |
-//        |
-//        |
-//        |
-//        |goals:
-//        |proof:
-//        |
-//        |    USE
-//        |    TRANSITIVITY
-//        |    WITH 1, 2
-//        |    USE
-//        |    TRANSITIVITY
-//        |    WITH 1, 2
-//        |""".stripMargin
-//
-//    println(input.replace("\t", "\\t").replace("\n", "\\n\n"))
-//    println(Parser(input)())

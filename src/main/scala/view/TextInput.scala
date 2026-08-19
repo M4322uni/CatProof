@@ -29,6 +29,6 @@ object TextInput extends VirtualizedScrollPane(
 
   private def post(): Unit =
     try
-      Terminal.display(Proof(getContent.getText)().toString)
+      Terminal.display(Proof(getContent.getText, Nil)().toString) // TODO
     catch
-      case f: IllegalArgumentException => Terminal.display(f.getMessage)
+      case f: IllegalArgumentException => Terminal.display(f.getMessage, true)
