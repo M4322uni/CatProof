@@ -1,6 +1,6 @@
 package logic.derivation
 
-import logic.derivation.structures.Category
+import logic.derivation.semantics.Category
 import utils.Name
 
 class Diagram(val name: Name,

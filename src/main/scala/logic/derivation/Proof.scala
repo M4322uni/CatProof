@@ -1,5 +1,6 @@
 package logic.derivation
 
+import logic.derivation.derivationTree.Condition
 import logic.parsing.*
 import logic.parsing.Formula.Include
 import utils.*
@@ -20,16 +21,17 @@ class Proof(body: String, diagrams: Seq[Diagram]):
         => diag
       }.toSet
 
-    val Tree(assumptions, goals, proof) = Parser(body)()
+    val tst @ Tree(assumptions, goals, proof) = Parser(body)()
     val assIncludes: Set[Name] = includes(assumptions)
-    val goalIncludes: Set[Name] = includes(assumptions)
+    val goalIncludes: Set[Name] = includes(goals)
     val assSet: Set[Diagram] = map(assIncludes)
     val goalSet: Set[Diagram] = map(goalIncludes)
+    val context: Set[Condition] = ???
     // create roots of derivation Tree
     // create context
     // run
 
-    "ciao"
+    tst
     
 object Proof:
   

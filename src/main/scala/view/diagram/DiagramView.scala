@@ -6,7 +6,7 @@ import view.View.{WINDOW_HEIGTH, WINDOW_WIDTH}
 import view.diagram.drawables.nodes.Node
 import view.diagram.drawables.{Arrow, Drawable}
 import logic.derivation.*
-import logic.derivation.structures.Category
+import logic.derivation.semantics.Category
 import utils.Name
 
 import scala.collection.mutable

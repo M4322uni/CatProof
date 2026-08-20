@@ -1,4 +1,4 @@
-package logic.derivation.structures
+package logic.derivation.semantics
 
 type Type = MorphismType | ObjectType
 

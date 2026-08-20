@@ -2,7 +2,7 @@ package logic.parsing
 
 import fastparse.*
 import NoWhitespace.*
-import logic.parsing.Category.*
+import logic.parsing.NameBound.*
 import logic.parsing.Construction.*
 import logic.parsing.Expression.*
 import logic.parsing.Formula.*
@@ -36,14 +36,14 @@ class Parser(text: String):
   private def expression[$ : P]: P[Expression] =
     P( (concatenation ~ indent_blank ~ "=" ~ indent_blank ~ concatenation)
       .map { (c1: Concatenation, c2: Concatenation) => Equation(c1, c2) }
-      | (concatenation ~ indent_blank ~ ":" ~ indent_blank ~ ttype)
-      .map { (c: Concatenation, t: Type) => TypeJudgement(c, t) }
+      | (name ~ indent_blank ~ ":" ~ indent_blank ~ ttype)
+      .map { (c: Name, t: Type) => TypeJudgement(c, t) }
     )
 
   private def ttype[$ : P]: P[Type] =
-    P( category ~ (indent_blank ~ "(" ~ indent_blank ~ concatenation ~ indent_blank
+    P( name_bound ~ (indent_blank ~ "(" ~ indent_blank ~ concatenation ~ indent_blank
       ~ "," ~ indent_blank ~ concatenation ~ indent_blank ~ ")").? )
-      .map { (cat: Category, opt: Option[(Concatenation, Concatenation)])
+      .map { (cat: NameBound, opt: Option[(Concatenation, Concatenation)])
       => opt match
         case Some((c1: Concatenation, c2: Concatenation)) => HomSet(cat, c1, c2)
         case _ => Cat(cat)}
@@ -56,9 +56,9 @@ class Parser(text: String):
     P( "dom(" ~ indent_blank ~ concatenation.map { Dom.apply } ~ indent_blank ~ ")"
       | "cod(" ~ indent_blank ~ concatenation.map { Cod.apply } ~ indent_blank ~ ")"
       | "id(" ~ indent_blank ~ construction.map { Id.apply } ~ indent_blank ~ ")"
-      | name.map{ Atomic.apply } )
+      | name_bound.map { Atomic.apply } )
 
-  private def category[$ : P]: P[Category] =
+  private def name_bound[$ : P]: P[NameBound] =
     P( name ).map { Base.apply }
 
   private def name[$ : P]: P[Name] =

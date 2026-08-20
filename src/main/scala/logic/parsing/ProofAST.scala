@@ -16,22 +16,22 @@ enum Formula:
 
 enum Expression:
   case Equation(left: Concatenation, right: Concatenation)
-  case TypeJudgement(obj: Concatenation, typ: Type)
+  case TypeJudgement(subj: Name, typ: Type)
 
 case class Concatenation(constructions: Seq[Construction]):
   require(constructions.nonEmpty)
 
 enum Construction:
-  case Atomic(name: Name)
+  case Atomic(name: NameBound)
   case Dom(morph: Concatenation)
   case Cod(morph: Concatenation)
   case Id(obj: Construction)
 
 enum Type:
-  case Cat(cat: Category)
-  case HomSet(cat: Category, dom: Concatenation, cod: Concatenation)
+  case Cat(cat: NameBound)
+  case HomSet(cat: NameBound, dom: Concatenation, cod: Concatenation)
   
-enum Category:
+enum NameBound:
   case Base(name: Name)
 
 case class ProofStep(rule: Rule, lines: Seq[Positive])
