@@ -2,7 +2,7 @@ package logic.derivation
 
 import utils.Name
 
-class Diagram(private val name: Name,
+class Diagram(val name: Name,
               cat: Cat,
               adjacency: Set[(Obj, Set[(Name, Obj)])]):
 

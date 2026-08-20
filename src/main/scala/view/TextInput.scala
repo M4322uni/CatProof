@@ -31,10 +31,10 @@ object TextInput extends VirtualizedScrollPane(
 
   private def post(): Unit =
     try
-      Terminal.display(Proof(getContent.getText, DiagramView.tabs.toSeq.map { 
+      Terminal.display(Proof(getContent.getText, DiagramView.tabs.map {
         tab => DiagramView.bindings(tab)
       }.collect {
         case diag: DiagramTab => diag.logicTranslate()
-      })().toString) // TODO
+      }.toSeq)().toString) // TODO
     catch
       case f: IllegalArgumentException => Terminal.display(f.getMessage, true)

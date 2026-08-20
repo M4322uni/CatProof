@@ -2,11 +2,11 @@ package logic.parsing
 
 import utils.*
 
-private[parsing] case class FakeTree(assumption: Seq[(Int, Formula)],
-                    goals: Seq[(Int, Formula)],
-                    proof: Seq[(Int, ProofStep)])
+private[parsing] case class FakeTree(assumptions: Seq[(Int, Formula)],
+                                     goals: Seq[(Int, Formula)],
+                                     proof: Seq[(Int, ProofStep)])
 
-case class Tree(assumption: Seq[(Positive, Formula)],
+case class Tree(assumptions: Seq[(Positive, Formula)],
                 goals: Seq[(Positive, Formula)],
                 proof: Seq[(Positive, ProofStep)])
 
