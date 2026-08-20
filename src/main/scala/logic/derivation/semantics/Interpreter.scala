@@ -8,9 +8,14 @@ import logic.parsing.Expression.*
 import logic.derivation.derivationTree.Condition.*
 import utils.Name
 
-def translateFormula(f: Formula, map: Map[Name, Diagram]): Set[Condition] =
+def translateFormula(map: Map[Name, Diagram],
+                     types: Set[logic.derivation.derivationTree.Condition])
+                    (f: Formula): Set[Condition] =
   f match
-    case Include(diagram) => translateDiagram(map(diagram))
+    case Include(diagram) => translateDiagram(map.get(diagram) match
+      case Some(d) => d
+      case _ => throw IllegalArgumentException(s"Semantic error: the $diagram diagram cannot be found")
+    )
     case Expr(exp) => Set(translateExpression(exp))
 
 def translateDiagram(diag: Diagram): Set[Condition] =
