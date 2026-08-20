@@ -21,7 +21,7 @@ class Diagram extends ScrollPane:
 
   private val base = new Pane()
   private val canvas = new Canvas()
-  private val drawables: ArrayBuffer[Drawable] = ArrayBuffer()
+  private[diagram] val drawables: ArrayBuffer[Drawable] = ArrayBuffer()
   private val selected: ArrayBuffer[Drawable] = ArrayBuffer()
   private var activeLine: Option[Line] = None
   private val refresh = AnimationTimer {_ => redraw()}

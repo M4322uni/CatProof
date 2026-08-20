@@ -7,6 +7,8 @@ import View.{WINDOW_HEIGTH, WINDOW_WIDTH}
 import logic.derivation.Proof
 import org.fxmisc.flowless.VirtualizedScrollPane
 import scalafx.scene.input.{KeyCode, KeyEvent}
+import view.diagram.DiagramView
+import view.diagram.DiagramView.DiagramTab
 
 object TextInput extends VirtualizedScrollPane(
     new CodeArea:
@@ -29,6 +31,10 @@ object TextInput extends VirtualizedScrollPane(
 
   private def post(): Unit =
     try
-      Terminal.display(Proof(getContent.getText, Nil)().toString) // TODO
+      Terminal.display(Proof(getContent.getText, DiagramView.tabs.toSeq.map { 
+        tab => DiagramView.bindings(tab)
+      }.collect {
+        case diag: DiagramTab => diag.logicTranslate()
+      })().toString) // TODO
     catch
       case f: IllegalArgumentException => Terminal.display(f.getMessage, true)
