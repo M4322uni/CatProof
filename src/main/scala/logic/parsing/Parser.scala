@@ -37,7 +37,7 @@ class Parser(text: String):
     P( (concatenation ~ indent_blank ~ "=" ~ indent_blank ~ concatenation)
       .map { (c1: Concatenation, c2: Concatenation) => Equation(c1, c2) }
       | (concatenation ~ indent_blank ~ ":" ~ indent_blank ~ ttype)
-      .map { (c: Concatenation, t: Type) => Judgement(c, t) }
+      .map { (c: Concatenation, t: Type) => TypeJudgement(c, t) }
     )
 
   private def ttype[$ : P]: P[Type] =

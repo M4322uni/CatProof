@@ -1,12 +1,13 @@
 package view.diagram
 
-import logic.derivation.{Cat, Obj}
 import scalafx.Includes.*
 import scalafx.scene.control.{Tab, TabPane}
-import utils.Name
 import view.View.{WINDOW_HEIGTH, WINDOW_WIDTH}
 import view.diagram.drawables.nodes.Node
 import view.diagram.drawables.{Arrow, Drawable}
+import logic.derivation.*
+import logic.derivation.structures.Category
+import utils.Name
 
 import scala.collection.mutable
 
@@ -20,7 +21,7 @@ object DiagramView extends TabPane:
   private[view] val bindings: mutable.Map[javafx.scene.control.Tab, Tab] = mutable.Map()
 
   class DiagramTab(name: String) extends Tab:
-    private[view] val diagram = Diagram()
+    private[view] val diagram = view.diagram.Diagram()
 
     text = name
     content = diagram
@@ -32,13 +33,12 @@ object DiagramView extends TabPane:
       diagram.stopRefresh()
 
     def logicTranslate(): logic.derivation.Diagram =
-      val temp: Set[(Obj, Set[(Name, Obj)])] = (for (node <- diagram.drawables.collect {
+      val temp: Set[(Vertex, Set[(Name, Vertex)])] = diagram.drawables.collect {
         case casted: Node => casted
-      })
-        yield (Obj(node.tag), (for (edge <- diagram.drawables.collect {
-          case Arrow(name, dom, cod) if dom == cod => (Name(name), Obj(cod.tag)) //TODO check where else to do this
-        }) yield edge).toSet)).toSet
-      logic.derivation.Diagram(name, Cat("Cat"), temp) //TODO support for multiple categories
+      }.map { node => (Vertex(node.tag), diagram.drawables.collect {
+        case Arrow(name, dom, cod) if dom == cod => (Name(name), Vertex(cod.tag)) //TODO check where else to do this
+      }.toSet) }.toSet
+      logic.derivation.Diagram(name, Category.Base("Cat"), temp) //TODO support for multiple categories
 
   bindings += firstTab.delegate -> firstTab
   tabs.addOne(firstTab)

@@ -1,10 +1,11 @@
 package logic.derivation
 
+import logic.derivation.structures.Category
 import utils.Name
 
 class Diagram(val name: Name,
-              cat: Cat,
-              adjacency: Set[(Obj, Set[(Name, Obj)])]):
+              cat: Category,
+              adjacency: Set[(Vertex, Set[(Name, Vertex)])]):
 
   override def equals(obj: Any): Boolean =
     obj match
@@ -13,6 +14,4 @@ class Diagram(val name: Name,
 
   override def hashCode(): Int = name.hashCode
 
-class Obj(name: Name)
-
-case class Cat(name: Name)
+class Vertex(name: Name)
