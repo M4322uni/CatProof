@@ -38,6 +38,7 @@ def translateFormula(map: Map[Name, Diagram],
 
 def translateDiagram(types: Map[Name, Type],
                      diag: Diagram): (Set[Condition], Map[Name, Type]) =
+  val
   ???
 
 def translateExpression(types: Map[Name, Type],

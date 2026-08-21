@@ -10,8 +10,8 @@ enum Condition:
   case TypeJudgement(subj: Name, ttype: Type)
 
 case class EquationPair(lhs: Construction, rhs: Construction):
-  require(lhs.getClass == rhs.getClass,
-    s"Semantic error: $lhs and $rhs are not of the same type")
+  if lhs.getClass != rhs.getClass
+    then throw SemanticError(s"$lhs and $rhs are not of the same type")
 
 case class Sequent(antecedent: Set[Condition], consequent: Set[Condition])
 
