@@ -38,7 +38,10 @@ def translateFormula(map: Map[Name, Diagram],
 
 def translateDiagram(types: Map[Name, Type],
                      diag: Diagram): (Set[Condition], Map[Name, Type]) =
-  val
+  def diagramDFS(node: Name, visited: Set[Name]) = ???
+  // type all the edges
+  // create a map : node x node -> concatenations, by dfs
+  // those are the equality classes, add equality conditions
   ???
 
 def translateExpression(types: Map[Name, Type],

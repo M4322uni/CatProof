@@ -4,8 +4,10 @@ import logic.derivation.semantics.Category
 import utils.Name
 
 class Diagram(val name: Name,
-              cat: Category,
-              adjacency: Set[(Vertex, Set[(Name, Vertex)])]):
+              val cat: Category,
+              val adjacency: Map[Name, Set[(Name, Name)]]):
+  
+  def nodes: Int = adjacency.size
 
   override def equals(obj: Any): Boolean =
     obj match
@@ -13,5 +15,3 @@ class Diagram(val name: Name,
       case _ => false
 
   override def hashCode(): Int = name.hashCode
-
-class Vertex(name: Name)

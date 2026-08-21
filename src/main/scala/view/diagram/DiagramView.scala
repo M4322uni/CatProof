@@ -33,11 +33,11 @@ object DiagramView extends TabPane:
       diagram.stopRefresh()
 
     def logicTranslate(): logic.derivation.Diagram =
-      val temp: Set[(Vertex, Set[(Name, Vertex)])] = diagram.drawables.collect {
+      val temp: Map[Name, Set[(Name, Name)]] = diagram.drawables.collect {
         case casted: Node => casted
-      }.map { node => (Vertex(node.tag), diagram.drawables.collect {
-        case Arrow(name, dom, cod) if dom == cod => (Name(name), Vertex(cod.tag)) //TODO check where else to do this
-      }.toSet) }.toSet
+      }.map { node => Name(node.tag) -> diagram.drawables.collect {
+        case Arrow(name, dom, cod) if dom == cod => (Name(name), Name(cod.tag)) //TODO check where else to do this
+      }.toSet }.toMap
       logic.derivation.Diagram(name, Category.Base("Cat"), temp) //TODO support for multiple categories
 
   bindings += firstTab.delegate -> firstTab
