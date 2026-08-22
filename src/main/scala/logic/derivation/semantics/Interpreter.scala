@@ -42,10 +42,27 @@ def translateFormula(map: Map[Name, Diagram],
 def translateDiagram(types: Map[Name, Type],
                      diag: Diagram): (Set[Condition], Map[Name, Type]) =
 
-  def diagramDFS(node: Name, visited: Set[Object],
-                 eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
+  def diagramDFS(eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
     Map[Object, Map[Object, Set[Morphism]]]) =
-    ???
+
+      def diagramDFS_r(node: Object, visited: Set[Object],
+                     eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
+        Map[Object, Map[Object, Set[Morphism]]]) =
+
+          def visitChildren(front: Seq[(Object, Set[Morphism])], visited: Set[Object],
+                            eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
+            Map[Object, Map[Object, Set[Morphism]]]) =
+              front match
+                case head :: tail =>
+                  val (nVisited, nEqs) = diagramDFS_r(head._1, visited, eqs)
+                  visitChildren(tail, nVisited, nEqs)
+                case Nil => (visited, eqs)
+
+        val newSet = visited + node
+
+          (???, ???)
+
+      ???
 
   // type all the edges and nodes
   val typesAdd: Map[Name, Type] = diag.adjacency.flatMap { (dom: Object, morphs: Set[(Morphism, Object)])
@@ -60,6 +77,13 @@ def translateDiagram(types: Map[Name, Type],
         case _ => throw NotImplementedError("Diagrams with constructions not yet implemented")
       )
   }
+
+  //add all missing typing
+  val conditionAdd: Set[Condition] =
+    (typesAdd.keys.toSet -- types.keys.toSet).map {
+      name => Condition.TypeJudgement(name, typesAdd(name))
+    }
+
   // create a map : node x node -> concatenations, by dfs
   val eqStart: Map[Object, Map[Object, Set[Morphism]]] =
     typesAdd.toSeq.collect {
@@ -71,10 +95,21 @@ def translateDiagram(types: Map[Name, Type],
       => obj -> seq
         .groupBy { _._2._1 }
         .map { (obj: Object, seq : Seq[(Object, (Object, Morphism))])
-        => obj -> seq.map { _._2._2 }.toSet }
+        => obj -> seq.map { _._2._2 }.toSet }.withDefaultValue(Set())
       }
-  // those are the equality classes, add equality conditions
-  ???
+
+  val (_, equalityConstraints) = diagramDFS(eqStart)
+
+  val eqConditions: Set[Condition] = (
+    for {
+      (_, point) <- equalityConstraints
+      (_, set) <- point
+      first: Morphism <- set.headOption
+      morph: Morphism <- set.tail
+    } yield Condition.Equation(EquationPair(first, morph))
+  ).toSet
+
+  (conditionAdd ++ eqConditions, types ++ typesAdd)
 
 def translateExpression(types: Map[Name, Type],
                         e: Expression): (Condition, Map[Name, Type]) =
