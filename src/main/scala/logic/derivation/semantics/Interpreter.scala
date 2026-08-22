@@ -71,6 +71,8 @@ def translateDiagram(types: Map[Name, Type],
           val rEqs = eqs + (node -> diag.adjacency(node).groupBy { _._2 }
             .map { (_, set) => set.map { _._1 } })
 
+          val rEqs2 = ???
+
           (nVisited, ???)
 
       ???
