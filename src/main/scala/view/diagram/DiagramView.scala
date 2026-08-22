@@ -6,7 +6,8 @@ import view.View.{WINDOW_HEIGTH, WINDOW_WIDTH}
 import view.diagram.drawables.nodes.Node
 import view.diagram.drawables.{Arrow, Drawable}
 import logic.derivation.*
-import logic.derivation.semantics.Category
+import logic.derivation.semantics.{Category, Morphism, Object}
+import logic.derivation.semantics.Object.*
 import utils.Name
 
 import scala.collection.mutable
@@ -33,10 +34,10 @@ object DiagramView extends TabPane:
       diagram.stopRefresh()
 
     def logicTranslate(): logic.derivation.Diagram =
-      val temp: Map[Name, Set[(Name, Name)]] = diagram.drawables.collect {
+      val temp: Map[Object, Set[(Morphism, Object)]] = diagram.drawables.collect {
         case casted: Node => casted
-      }.map { node => Name(node.tag) -> diagram.drawables.collect {
-        case Arrow(name, dom, cod) if dom == cod => (Name(name), Name(cod.tag)) //TODO check where else to do this
+      }.map { node => Base(node.tag) -> diagram.drawables.collect {
+        case Arrow(name, dom, cod) if dom == cod => (Morphism.Base(name), Base(cod.tag)) //TODO check where else to do this
       }.toSet }.toMap
       logic.derivation.Diagram(name, Category.Base("Cat"), temp) //TODO support for multiple categories
 

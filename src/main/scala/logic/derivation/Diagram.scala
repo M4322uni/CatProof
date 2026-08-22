@@ -1,11 +1,11 @@
 package logic.derivation
 
-import logic.derivation.semantics.Category
+import logic.derivation.semantics.{Category, Morphism, Object}
 import utils.Name
 
 class Diagram(val name: Name,
               val cat: Category,
-              val adjacency: Map[Name, Set[(Name, Name)]]):
+              val adjacency: Map[Object, Set[(Morphism, Object)]]):
   
   def nodes: Int = adjacency.size
 

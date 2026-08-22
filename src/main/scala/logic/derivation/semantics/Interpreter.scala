@@ -9,38 +9,70 @@ import logic.parsing.NameBound.*
 import logic.parsing.Formula.*
 import logic.parsing.Type.*
 import logic.derivation.semantics.*
-import TranslateEncapsulate.*
-import utils.Name
+import TranslateCapsule.*
+import utils.{Name, Positive}
 
 class SemanticError(message: String)
   extends IllegalArgumentException(s"Semantic error: $message")
 
 def translateFormulaList(map: Map[Name, Diagram],
                          types: Map[Name, Type],
-                         s: Seq[Formula]): Set[Condition] =
+                         s: Seq[(Positive, Formula)]): Map[Positive, Set[Condition]] =
   s match
     case h :: tail =>
       val (conds, type_res) = translateFormula(map, types, h)
-      conds ++ translateFormulaList(map, type_res, tail)
-    case Nil => Set()
+      translateFormulaList(map, type_res, tail) + conds
+    case Nil => Map()
 
 def translateFormula(map: Map[Name, Diagram],
                      types: Map[Name, Type],
-                     f: Formula): (Set[Condition], Map[Name, Type]) =
+                     tup: (Positive, Formula)): ((Positive, Set[Condition]), Map[Name, Type]) =
+  val (p, f) = tup
   f match
-    case Include(diagram) => translateDiagram(types, map.get(diagram) match
-      case Some(d) => d
-      case _ => throw SemanticError(s"the $diagram diagram cannot be found")
-    )
+    case Include(diagram) =>
+      val (conds, newTypes) = translateDiagram(types, map.get(diagram) match
+        case Some(d) => d
+        case None => throw SemanticError(s"the $diagram diagram cannot be found")
+      )
+      (p -> conds, newTypes)
     case Expr(exp) =>
-      val (cond, type_res) = translateExpression(types, exp)
-      (Set(cond), type_res)
+      val (cond, newTypes) = translateExpression(types, exp)
+      (p -> Set(cond), newTypes)
 
 def translateDiagram(types: Map[Name, Type],
                      diag: Diagram): (Set[Condition], Map[Name, Type]) =
-  def diagramDFS(node: Name, visited: Set[Name]) = ???
-  // type all the edges
+
+  def diagramDFS(node: Name, visited: Set[Object],
+                 eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
+    Map[Object, Map[Object, Set[Morphism]]]) =
+    ???
+
+  // type all the edges and nodes
+  val typesAdd: Map[Name, Type] = diag.adjacency.flatMap { (dom: Object, morphs: Set[(Morphism, Object)])
+    =>
+    morphs.map { (morph: Morphism, cod: Object) =>
+      morph match
+        case Morphism.Base(name) => name -> MorphismType.HomSet(diag.cat, dom, cod)
+        case _ => throw NotImplementedError("Diagrams with constructions not yet implemented")
+    }
+      + ( dom match
+        case Object.Base(name) => name -> ObjectType.Cat(diag.cat)
+        case _ => throw NotImplementedError("Diagrams with constructions not yet implemented")
+      )
+  }
   // create a map : node x node -> concatenations, by dfs
+  val eqStart: Map[Object, Map[Object, Set[Morphism]]] =
+    typesAdd.toSeq.collect {
+      case name -> MorphismType.HomSet(_, dom, cod)
+        => dom -> (cod -> Morphism.Base(name))
+    }
+      .groupBy { _._1 }
+      .map { (obj: Object, seq : Seq[(Object, (Object, Morphism))])
+      => obj -> seq
+        .groupBy { _._2._1 }
+        .map { (obj: Object, seq : Seq[(Object, (Object, Morphism))])
+        => obj -> seq.map { _._2._2 }.toSet }
+      }
   // those are the equality classes, add equality conditions
   ???
 
@@ -113,11 +145,11 @@ def translateType(types: Map[Name, Type], t: logic.parsing.Type):
         extendTypes(types, casted, CategoryType.-))
       case CategoryCapsule(casted) => (ObjectType.Cat(casted), types)
 
-enum TranslateEncapsulate:
+enum TranslateCapsule:
   case NameCapsule(name: Name)
   case CategoryCapsule(cat: Category)
 
-def translateNameBound(n: NameBound): TranslateEncapsulate =
+def translateNameBound(n: NameBound): TranslateCapsule =
   n match
-    case Base(name) => NameCapsule(name)
+    case NameBound.Base(name) => NameCapsule(name)
     // TODO: extend

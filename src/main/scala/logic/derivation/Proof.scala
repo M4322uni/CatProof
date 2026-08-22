@@ -26,7 +26,7 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     val goalIncludes: Set[Name] = includes(goals)
     val assSet: Set[Diagram] = map(assIncludes)
     val goalSet: Set[Diagram] = map(goalIncludes)
-    val context: Set[Condition] = ???
+    val context: Map[Positive, Set[Condition]] = ???
     // create roots of derivation Tree
     // create context
     // run
