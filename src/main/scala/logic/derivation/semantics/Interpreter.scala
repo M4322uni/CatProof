@@ -12,8 +12,11 @@ import logic.derivation.semantics.*
 import TranslateCapsule.*
 import utils.{Name, Positive}
 
+import scala.annotation.tailrec
+
 class SemanticError(message: String)
   extends IllegalArgumentException(s"Semantic error: $message")
+
 
 def translateFormulaList(map: Map[Name, Diagram],
                          types: Map[Name, Type],
@@ -49,18 +52,26 @@ def translateDiagram(types: Map[Name, Type],
                      eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
         Map[Object, Map[Object, Set[Morphism]]]) =
 
-          def visitChildren(front: Seq[(Object, Set[Morphism])], visited: Set[Object],
+          @tailrec
+          def visitChildren(front: Seq[Object], visited: Set[Object],
                             eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
             Map[Object, Map[Object, Set[Morphism]]]) =
               front match
                 case head :: tail =>
-                  val (nVisited, nEqs) = diagramDFS_r(head._1, visited, eqs)
+                  val (nVisited, nEqs) = diagramDFS_r(head, visited, eqs)
                   visitChildren(tail, nVisited, nEqs)
                 case Nil => (visited, eqs)
 
-        val newSet = visited + node
+          val (nVisited, nEqs) = visitChildren(diag.adjacency(node)
+            .toSeq
+            .map(_._2)
+            .filter { !visited.contains(_) },
+            visited + node, eqs)
 
-          (???, ???)
+          val rEqs = eqs + (node -> diag.adjacency(node).groupBy { _._2 }
+            .map { (_, set) => set.map { _._1 } })
+
+          (nVisited, ???)
 
       ???
 
@@ -85,20 +96,20 @@ def translateDiagram(types: Map[Name, Type],
     }
 
   // create a map : node x node -> concatenations, by dfs
-  val eqStart: Map[Object, Map[Object, Set[Morphism]]] =
-    typesAdd.toSeq.collect {
-      case name -> MorphismType.HomSet(_, dom, cod)
-        => dom -> (cod -> Morphism.Base(name))
-    }
-      .groupBy { _._1 }
-      .map { (obj: Object, seq : Seq[(Object, (Object, Morphism))])
-      => obj -> seq
-        .groupBy { _._2._1 }
-        .map { (obj: Object, seq : Seq[(Object, (Object, Morphism))])
-        => obj -> seq.map { _._2._2 }.toSet }.withDefaultValue(Set())
-      }
+//  val eqStart: Map[Object, Map[Object, Set[Morphism]]] =
+//    typesAdd.toSeq.collect {
+//      case name -> MorphismType.HomSet(_, dom, cod)
+//        => dom -> (cod -> Morphism.Base(name))
+//    }
+//      .groupBy { _._1 }
+//      .map { (obj: Object, seq : Seq[(Object, (Object, Morphism))])
+//      => obj -> seq
+//        .groupBy { _._2._1 }
+//        .map { (obj: Object, seq : Seq[(Object, (Object, Morphism))])
+//        => obj -> seq.map { _._2._2 }.toSet }.withDefaultValue(Set())
+//      }
 
-  val (_, equalityConstraints) = diagramDFS(eqStart)
+  val (_, equalityConstraints) = diagramDFS(Map().withDefaultValue(Map().withDefaultValue(Set())))
 
   val eqConditions: Set[Condition] = (
     for {
