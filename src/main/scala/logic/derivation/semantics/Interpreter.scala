@@ -77,7 +77,9 @@ def translateDiagram(types: Map[Name, Type],
                 morph1 <- morphSet
                 (cod2, morphSet2) <- nEqs(cod1)
                 morph2 <- morphSet2
-              } yield (cod2, Morphism.Concatenation(Seq(morph1, morph2))))
+              } yield (cod2, Morphism.Concatenation(morph2 match
+                case Morphism.Concatenation(seq) => morph1 +: seq
+                case _ => Seq(morph1, morph2))))
                 .groupBy { _._1 }
                 .map { (obj, map) => obj ->
                   map.map { (obj, morph) => morph }.toSet }.withDefaultValue(Set())
