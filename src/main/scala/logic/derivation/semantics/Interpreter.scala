@@ -120,7 +120,7 @@ def translateDiagram(types: Map[Name, Type],
       (_, set) <- point
       first: Morphism <- set.headOption
       morph: Morphism <- set.tail
-    } yield Condition.Equation(EquationPair(first, morph))
+    } yield Condition.Equation(Check(first, morph))
   ).toSet
 
   (conditionAdd ++ eqConditions, types ++ typesAdd)
@@ -129,7 +129,7 @@ def translateExpression(types: Map[Name, Type],
                         e: Expression): (Condition, Map[Name, Type]) =
   e match
     case logic.parsing.Expression.Equation(left, right)
-      => (Condition.Equation(EquationPair(
+      => (Condition.Equation(Check(
         translateConcatenation(types, left),
         translateConcatenation(types, right))), types)
     case logic.parsing.Expression.TypeJudgement(subj, typ)
