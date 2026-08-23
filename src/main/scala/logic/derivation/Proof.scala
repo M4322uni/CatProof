@@ -10,23 +10,17 @@ type ProofResult = Tree | String //TODO
 class Proof(body: String, diagrams: Seq[Diagram]):
   
   def apply(): ProofResult =
-    def includes(formulas: Seq[(Positive, Formula)]): Set[Name] =
+    def includes(formulas: Seq[(Positive, Formula)]): Map[Name, Diagram] =
       formulas.collect {
-        case (_, Include(name)) => name
-      }.toSet
-
-    def map(includes: Set[Name]): Set[Diagram] =
-      diagrams.collect {
-        case diag if includes.contains(diag.name)
-        => diag
-      }.toSet
+        case (_, Include(name)) => name -> (diagrams.find(_.name == name) match
+          case Some(v) => v
+          case _ => throw IllegalArgumentException(s"Parser error: diagram $name not found"))
+      }.toMap
 
     val tst @ Tree(assumptions, goals, proof) = Parser(body)()
-    val assIncludes: Set[Name] = includes(assumptions)
-    val goalIncludes: Set[Name] = includes(goals)
-    val assSet: Set[Diagram] = map(assIncludes)
-    val goalSet: Set[Diagram] = map(goalIncludes)
-    val context: Map[Positive, Set[Condition]] = ???
+    val assIncludes: Map[Name, Diagram] = includes(assumptions)
+    val goalIncludes: Map[Name, Diagram] = includes(goals)
+//    val context: Map[Positive, Set[Condition]] = translateFormulaList()
     // create roots of derivation Tree
     // create context
     // run

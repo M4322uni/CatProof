@@ -45,37 +45,47 @@ def translateFormula(map: Map[Name, Diagram],
 def translateDiagram(types: Map[Name, Type],
                      diag: Diagram): (Set[Condition], Map[Name, Type]) =
 
-  def diagramDFS(eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
-    Map[Object, Map[Object, Set[Morphism]]]) =
+  def diagramDFS(): (Set[Object], Map[Object, Map[Object, Set[Morphism]]]) =
+
+      @tailrec
+      def linearVisit(front: Seq[Object], visited: Set[Object],
+                      eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
+        Map[Object, Map[Object, Set[Morphism]]]) =
+        front match
+          case head :: tail =>
+            val (nVisited, nEqs) = diagramDFS_r(head, visited, eqs)
+            linearVisit(tail, nVisited, nEqs)
+          case Nil => (visited, eqs)
 
       def diagramDFS_r(node: Object, visited: Set[Object],
                      eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
         Map[Object, Map[Object, Set[Morphism]]]) =
 
-          @tailrec
-          def visitChildren(front: Seq[Object], visited: Set[Object],
-                            eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
-            Map[Object, Map[Object, Set[Morphism]]]) =
-              front match
-                case head :: tail =>
-                  val (nVisited, nEqs) = diagramDFS_r(head, visited, eqs)
-                  visitChildren(tail, nVisited, nEqs)
-                case Nil => (visited, eqs)
+          if visited.contains(node) then (visited, eqs)
+          else
+            val (nVisited, nEqs) = linearVisit(diag.adjacency(node)
+              .toSeq
+              .map(_._2),
+              visited + node, eqs)
 
-          val (nVisited, nEqs) = visitChildren(diag.adjacency(node)
-            .toSeq
-            .map(_._2)
-            .filter { !visited.contains(_) },
-            visited + node, eqs)
+            val morphs: Map[Object, Set[Morphism]] = diag.adjacency(node).groupBy { _._2 }
+              .map { (obj, set) => obj -> set.map { _._1 } }.withDefaultValue(Set())
 
-          val rEqs = eqs + (node -> diag.adjacency(node).groupBy { _._2 }
-            .map { (_, set) => set.map { _._1 } })
+            val morphs2: Map[Object, Set[Morphism]] =
+              (for {
+                (cod1, morphSet) <- morphs
+                morph1 <- morphSet
+                (cod2, morphSet2) <- nEqs(cod1)
+                morph2 <- morphSet2
+              } yield (cod2, Morphism.Concatenation(Seq(morph1, morph2))))
+                .groupBy { _._1 }
+                .map { (obj, map) => obj ->
+                  (map.map { (obj, morph) => morph }.toSet ++ morphs(obj)) }
 
-          val rEqs2 = ???
+            (nVisited, eqs + (node -> morphs2))
 
-          (nVisited, ???)
-
-      ???
+      linearVisit(diag.adjacency.toSeq.map(_._1), Set(),
+        Map().withDefaultValue(Map().withDefaultValue(Set())))
 
   // type all the edges and nodes
   val typesAdd: Map[Name, Type] = diag.adjacency.flatMap { (dom: Object, morphs: Set[(Morphism, Object)])
@@ -97,21 +107,7 @@ def translateDiagram(types: Map[Name, Type],
       name => Condition.TypeJudgement(name, typesAdd(name))
     }
 
-  // create a map : node x node -> concatenations, by dfs
-//  val eqStart: Map[Object, Map[Object, Set[Morphism]]] =
-//    typesAdd.toSeq.collect {
-//      case name -> MorphismType.HomSet(_, dom, cod)
-//        => dom -> (cod -> Morphism.Base(name))
-//    }
-//      .groupBy { _._1 }
-//      .map { (obj: Object, seq : Seq[(Object, (Object, Morphism))])
-//      => obj -> seq
-//        .groupBy { _._2._1 }
-//        .map { (obj: Object, seq : Seq[(Object, (Object, Morphism))])
-//        => obj -> seq.map { _._2._2 }.toSet }.withDefaultValue(Set())
-//      }
-
-  val (_, equalityConstraints) = diagramDFS(Map().withDefaultValue(Map().withDefaultValue(Set())))
+  val (_, equalityConstraints) = diagramDFS()
 
   val eqConditions: Set[Condition] = (
     for {
