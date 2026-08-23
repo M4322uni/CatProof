@@ -3,9 +3,10 @@ package logic.derivation
 import logic.derivation.derivationTree.Condition
 import logic.parsing.*
 import logic.parsing.Formula.Include
+import logic.derivation.semantics.*
 import utils.*
 
-type ProofResult = Tree | String //TODO
+type ProofResult = Set[Condition] | Tree | String //TODO
 
 class Proof(body: String, diagrams: Seq[Diagram]):
   
@@ -20,12 +21,12 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     val tst @ Tree(assumptions, goals, proof) = Parser(body)()
     val assIncludes: Map[Name, Diagram] = includes(assumptions)
     val goalIncludes: Map[Name, Diagram] = includes(goals)
-//    val context: Map[Positive, Set[Condition]] = translateFormulaList()
+    val context: Map[Positive, Set[Condition]] = translateFormulaList(assIncludes, Map(), assumptions)
     // create roots of derivation Tree
     // create context
     // run
 
-    tst
+    context.flatMap(_._2).toSet
     
 object Proof:
   

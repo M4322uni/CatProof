@@ -11,7 +11,7 @@ import view.diagram.DiagramView
 import view.diagram.DiagramView.DiagramTab
 
 object TextInput extends VirtualizedScrollPane(
-    new CodeArea:
+    new CodeArea("ASSUMPTIONS:\nGOALS:\nPROOF:"):
       setPrefWidth(WINDOW_WIDTH / 3.0)
       setPrefHeight(WINDOW_HEIGTH * (2 / 3.0))
       setParagraphGraphicFactory(LineNumberFactory.get(this))

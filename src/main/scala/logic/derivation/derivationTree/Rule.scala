@@ -10,8 +10,11 @@ enum Condition:
   case TypeJudgement(subj: Name, ttype: Type)
 
 case class EquationPair(lhs: Construction, rhs: Construction):
-  if lhs.getClass != rhs.getClass
-    then throw SemanticError(s"$lhs and $rhs are not of the same type")
+  (lhs, rhs) match
+    case (_: Category, _: Category)
+         | (_: Morphism, _: Morphism)
+         | (_: Object, _: Object) =>
+    case _ => throw SemanticError(s"$lhs and $rhs are not of the same type")
 
 case class Sequent(antecedent: Set[Condition], consequent: Set[Condition])
 

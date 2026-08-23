@@ -37,7 +37,7 @@ object DiagramView extends TabPane:
       val temp: Map[Object, Set[(Morphism, Object)]] = diagram.drawables.collect {
         case casted: Node => casted
       }.map { node => Base(node.tag) -> diagram.drawables.collect {
-        case Arrow(name, dom, cod) if dom == cod => (Morphism.Base(name), Base(cod.tag)) //TODO check where else to do this
+        case Arrow(name, dom, cod) if dom == node => (Morphism.Base(name), Base(cod.tag)) //TODO check where else to do this
       }.toSet }.toMap
       logic.derivation.Diagram(name, Category.Base("Cat"), temp) //TODO support for multiple categories
 

@@ -79,7 +79,7 @@ class Parser(text: String):
     P( CharIn("\t ") ~ indent_blank | "\n" ~ indent_bound )
 
   private def include[$ : P]: P[Formula.Include] =
-    P( "<include " ~ name ~ ">" )
+    P( IgnoreCase("<include ") ~ name ~ ">" )
       .map { Include.apply }
 
   private def proof[$ : P]: P[Seq[(Int, ProofStep)]] =
