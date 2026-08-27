@@ -110,8 +110,15 @@ def translateDiagram(types: Map[Name, Type],
 
   //add all missing typing
   val conditionAdd: Set[Condition] =
-    (typesAdd.keys.toSet -- types.keys.toSet).map {
-      name => Condition.TypeJudgement(name, typesAdd(name))
+    typesAdd.keys.toSet.map {
+      name => if types.contains(name) then
+                if types(name) != typesAdd(name)
+                    then
+                      println(types(name))
+                      println(typesAdd(name))
+                      throw SemanticError(s"more than one type assigned to $name")
+                else ()
+              Condition.TypeJudgement(name, typesAdd(name))
     }
 
   val (_, equalityConstraints) = diagramDFS()
@@ -192,7 +199,13 @@ def translateType(types: Map[Name, Type], t: logic.parsing.Type):
         extendTypes(types, casted, CategoryType.-))
       case CategoryCapsule(casted) => (ObjectType.Cat(casted), types)
     case HomSet(cat, dom, cod) => translateNameBound(cat) match
-      case NameCapsule(casted) => (ObjectType.Cat(Category.Base(casted)),
+      case NameCapsule(casted) => (MorphismType.HomSet(Category.Base(casted),
+        translateConcatenation(types, dom) match
+          case casted: Object => casted
+          case _ => throw SemanticError("a homset is defines only between two objects"),
+        translateConcatenation(types, cod) match
+          case casted: Object => casted
+          case _ => throw SemanticError("a homset is defines only between two objects")),
         extendTypes(types, casted, CategoryType.-))
       case CategoryCapsule(casted) => (ObjectType.Cat(casted), types)
 
