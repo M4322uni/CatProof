@@ -45,70 +45,76 @@ def translateFormula(map: Map[Name, Diagram],
 def translateDiagram(types: Map[Name, Type],
                      diag: Diagram): (Set[Condition], Map[Name, Type]) =
 
+  def createTypes(morphisms: Seq[(Object, Object, Morphism)]): Map[Name, Type] =
+    morphisms match
+      case (dom@Object.Base(name1), cod@Object.Base(name2), Morphism.Base(name3)) :: tail =>
+        val res = createTypes(tail)
+        res
+        ++ (res.get(name3) match
+          case Some(x) => if x != MorphismType.HomSet(diag.cat, dom, cod)
+            then throw SemanticError(s"${diag.name} has contradicting types for morphism $name3")
+            else Map()
+          case _ => Map(name3 -> MorphismType.HomSet(diag.cat, dom, cod)))
+        ++ Map(name1 -> ObjectType.Cat(diag.cat), name2 -> ObjectType.Cat(diag.cat))
+      case Nil => Map()
+      case _ => throw IllegalArgumentException("Diagrams with constructions not yet implemented")
+
   def diagramDFS(): (Set[Object], Map[Object, Map[Object, Set[Morphism]]]) =
 
-      @tailrec
-      def linearVisit(front: Seq[Object], visited: Set[Object],
-                      eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
-        Map[Object, Map[Object, Set[Morphism]]]) =
+    @tailrec
+    def linearVisit(front: Seq[Object], visited: Set[Object],
+                    eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
+      Map[Object, Map[Object, Set[Morphism]]]) =
         front match
           case head :: tail =>
             val (nVisited, nEqs) = diagramDFS_r(head, visited, eqs)
             linearVisit(tail, nVisited, nEqs)
           case Nil => (visited, eqs)
 
-      def diagramDFS_r(node: Object, visited: Set[Object],
-                     eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
-        Map[Object, Map[Object, Set[Morphism]]]) =
+    def diagramDFS_r(node: Object, visited: Set[Object],
+                   eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
+      Map[Object, Map[Object, Set[Morphism]]]) =
 
-          if visited.contains(node) then (visited, eqs)
-          else
-            val (nVisited, nEqs) = linearVisit(diag.adjacency(node)
-              .toSeq
-              .map(_._2),
-              visited + node, eqs)
+        if visited.contains(node) then (visited, eqs)
+        else
+          val (nVisited, nEqs) = linearVisit(diag.adjacency(node)
+            .toSeq
+            .map(_._2),
+            visited + node, eqs)
 
-            val morphs: Map[Object, Set[Morphism]] = diag.adjacency(node).groupBy { _._2 }
-              .map { (obj, set) => obj -> set.map { _._1 } }.withDefaultValue(Set())
+          val morphs: Map[Object, Set[Morphism]] = diag.adjacency(node).groupBy { _._2 }
+            .map { (obj, set) => obj -> set.map { _._1 } }.withDefaultValue(Set())
 
-            val morphs2: Map[Object, Set[Morphism]] =
-              (for {
-                (cod1, morphSet) <- morphs
-                morph1 <- morphSet
-                (cod2, morphSet2) <- nEqs(cod1)
-                morph2 <- morphSet2
-              } yield (cod2, Morphism.Concatenation(morph2 match
-                case Morphism.Concatenation(seq) => morph1 +: seq
-                case _ => Seq(morph1, morph2))))
-                .groupBy { _._1 }
-                .map { (obj, map) => obj ->
-                  map.map { (obj, morph) => morph }.toSet }.withDefaultValue(Set())
+          val morphs2: Map[Object, Set[Morphism]] =
+            (for {
+              (cod1, morphSet) <- morphs
+              morph1 <- morphSet
+              (cod2, morphSet2) <- nEqs(cod1)
+              morph2 <- morphSet2
+            } yield (cod2, Morphism.Concatenation(morph2 match
+              case Morphism.Concatenation(seq) => morph1 +: seq
+              case _ => Seq(morph1, morph2))))
+              .groupBy { _._1 }
+              .map { (obj, map) => obj ->
+                map.map { (obj, morph) => morph }.toSet }.withDefaultValue(Set())
 
-            val morphsMerge: Map[Object, Set[Morphism]] =
-              (morphs.keys.toSet ++ morphs2.keys.toSet).map {
-                num => num -> (morphs(num) ++ morphs2(num))
-              }.toMap
+          val morphsMerge: Map[Object, Set[Morphism]] =
+            (morphs.keys.toSet ++ morphs2.keys.toSet).map {
+              num => num -> (morphs(num) ++ morphs2(num))
+            }.toMap
 
-            (nVisited, eqs + (node -> morphsMerge))
+          (nVisited, eqs + (node -> morphsMerge))
 
-      linearVisit(diag.adjacency.toSeq.map(_._1), Set(),
-        Map().withDefaultValue(Map().withDefaultValue(Set())))
+    linearVisit(diag.adjacency.toSeq.map(_._1), Set(),
+      Map().withDefaultValue(Map().withDefaultValue(Set())))
 
   // type all the edges and nodes
-  val typesAdd: Map[Name, Type] = diag.adjacency.flatMap { (dom: Object, morphs: Set[(Morphism, Object)])
-    =>
-    morphs.map { (morph: Morphism, cod: Object) =>
-      morph match
-        case Morphism.Base(name) =>
-          name -> MorphismType.HomSet(diag.cat, dom, cod)
-        case _ => throw NotImplementedError("Diagrams with constructions not yet implemented")
-    }
-      + ( dom match
-        case Object.Base(name) => name -> ObjectType.Cat(diag.cat)
-        case _ => throw NotImplementedError("Diagrams with constructions not yet implemented")
-      )
-  } // da rivedere: i codomini non vengono tipati e bisognerebbe controllare le inconsistenze
-  // ad es. oggetti o morfismi con più tipi
+  val typesAdd: Map[Name, Type] =
+    createTypes(
+      diag.adjacency.toSeq.flatMap{ (dom: Object, morphs: Set[(Morphism, Object)])
+      => morphs.toSeq.map { (morph: Morphism, cod: Object) => (dom, cod, morph) }
+      }
+    )
 
   //add all missing typing
   val conditionAdd: Set[Condition] =
@@ -119,8 +125,10 @@ def translateDiagram(types: Map[Name, Type],
                       println(types(name))
                       println(typesAdd(name))
                       throw SemanticError(s"more than one type assigned to $name")
-                else ()
-              Condition.TypeJudgement(name, typesAdd(name))
+                else None
+              else Some(Condition.TypeJudgement(name, typesAdd(name)))
+    }. collect {
+      case Some(x) => x
     }
 
   val (_, equalityConstraints) = diagramDFS()
