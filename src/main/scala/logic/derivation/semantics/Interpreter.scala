@@ -99,14 +99,16 @@ def translateDiagram(types: Map[Name, Type],
     =>
     morphs.map { (morph: Morphism, cod: Object) =>
       morph match
-        case Morphism.Base(name) => name -> MorphismType.HomSet(diag.cat, dom, cod)
+        case Morphism.Base(name) =>
+          name -> MorphismType.HomSet(diag.cat, dom, cod)
         case _ => throw NotImplementedError("Diagrams with constructions not yet implemented")
     }
       + ( dom match
         case Object.Base(name) => name -> ObjectType.Cat(diag.cat)
         case _ => throw NotImplementedError("Diagrams with constructions not yet implemented")
       )
-  }
+  } // da rivedere: i codomini non vengono tipati e bisognerebbe controllare le inconsistenze
+  // ad es. oggetti o morfismi con più tipi
 
   //add all missing typing
   val conditionAdd: Set[Condition] =
