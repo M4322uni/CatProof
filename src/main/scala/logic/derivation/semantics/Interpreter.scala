@@ -19,17 +19,18 @@ class SemanticError(message: String)
 
 
 def translateFormulaList(map: Map[Name, Diagram],
-                         types: Map[Name, Type],
-                         s: Seq[(Positive, Formula)]): Map[Positive, Set[Condition]] =
+                         types: Map[Object | Morphism | Name, Type],
+                         s: Seq[(Positive, Formula)]): (Map[Positive, Set[Condition]], Map[Object | Morphism | Name, Type]) =
   s match
     case h :: tail =>
       val (conds, type_res) = translateFormula(map, types, h)
-      translateFormulaList(map, type_res, tail) + conds
-    case Nil => Map()
+      val (condsL, type_resL) = translateFormulaList(map, type_res, tail)
+      (condsL + conds, type_resL)
+    case Nil => (Map(), types)
 
 def translateFormula(map: Map[Name, Diagram],
-                     types: Map[Name, Type],
-                     tup: (Positive, Formula)): ((Positive, Set[Condition]), Map[Name, Type]) =
+                     types: Map[Object | Morphism | Name, Type],
+                     tup: (Positive, Formula)): ((Positive, Set[Condition]), Map[Object | Morphism | Name, Type]) =
   val (p, f) = tup
   f match
     case Include(diagram) =>
@@ -42,20 +43,28 @@ def translateFormula(map: Map[Name, Diagram],
       val (cond, newTypes) = translateExpression(types, exp)
       (p -> Set(cond), newTypes)
 
-def translateDiagram(types: Map[Name, Type],
-                     diag: Diagram): (Set[Condition], Map[Name, Type]) =
+def translateDiagram(types: Map[Object | Morphism | Name, Type],
+                     diag: Diagram): (Set[Condition], Map[Object | Morphism | Name, Type]) =
 
   def createTypes(morphisms: Seq[(Object, Object, Morphism)]): Map[Name, Type] =
     morphisms match
-      case (dom@Object.Base(name1), cod@Object.Base(name2), Morphism.Base(name3)) :: tail =>
+      case (dom @ Object.Base(name1), cod @ Object.Base(name2), Morphism.Base(name3)) :: tail =>
         val res = createTypes(tail)
-        res
-        ++ (res.get(name3) match
+        val res1 = res ++ (res.get(name1) match
+          case Some(x) => if x != ObjectType.Cat(diag.cat)
+            then throw SemanticError(s"${diag.name} has contradicting types for $name1")
+            else Map()
+          case _ => Map(name1 -> ObjectType.Cat(diag.cat)))
+        val res2 = res1 ++ (res1.get(name2) match
+          case Some(x) => if x != ObjectType.Cat(diag.cat)
+            then throw SemanticError(s"${diag.name} has contradicting types for $name2")
+            else Map()
+          case _ => Map(name2 -> ObjectType.Cat(diag.cat)))
+        res2 ++ (res2.get(name3) match
           case Some(x) => if x != MorphismType.HomSet(diag.cat, dom, cod)
-            then throw SemanticError(s"${diag.name} has contradicting types for morphism $name3")
+            then throw SemanticError(s"${diag.name} has contradicting types for $name3")
             else Map()
           case _ => Map(name3 -> MorphismType.HomSet(diag.cat, dom, cod)))
-        ++ Map(name1 -> ObjectType.Cat(diag.cat), name2 -> ObjectType.Cat(diag.cat))
       case Nil => Map()
       case _ => throw IllegalArgumentException("Diagrams with constructions not yet implemented")
 
@@ -144,8 +153,15 @@ def translateDiagram(types: Map[Name, Type],
 
   (conditionAdd ++ eqConditions, types ++ typesAdd)
 
-def translateExpression(types: Map[Name, Type],
-                        e: Expression): (Condition, Map[Name, Type]) =
+def translateExpression(types: Map[Object | Morphism | Name, Type],
+                        e: Expression): (Condition, Map[Object | Morphism | Name, Type]) =
+
+  def createTypeJudge(types: Map[Object | Morphism | Name, Type],
+                      subj: Object | Morphism | Name, typ: logic.parsing.Type) =
+    val (translatedType, newTypes) = translateType(types, typ)
+    val judge: TypeJudgement = Condition.TypeJudgement(subj, translatedType)
+    (judge, extendTypes(newTypes, judge))
+
   e match
     case logic.parsing.Expression.Equation(left, right)
       => (Condition.Equation(Check(
@@ -153,22 +169,27 @@ def translateExpression(types: Map[Name, Type],
         translateConcatenation(types, right))), types)
     case logic.parsing.Expression.TypeJudgement(subj, typ)
       =>
-      val (translatedType, newTypes) = translateType(types, typ)
-      val judge: TypeJudgement = Condition.TypeJudgement(subj, translatedType)
-      (judge, extendTypes(newTypes, judge))
+      subj match
+        case Concatenation(Seq(Atomic(Base(name)))) =>
+          createTypeJudge(types, name, typ)
+        case _ =>
+          translateConcatenation(types, subj) match
+            case x: (Object | Morphism) =>
+              createTypeJudge(types, x, typ)
+            case _ => throw SemanticError("a category cannot have an assigned type")
 
-def extendTypes(types: Map[Name, Type], judge: TypeJudgement): Map[Name, Type] =
+def extendTypes(types: Map[Object | Morphism | Name, Type], judge: TypeJudgement): Map[Object | Morphism | Name, Type] =
   val TypeJudgement(name, ttype) = judge
   extendTypes(types, name, ttype)
 
-def extendTypes(types: Map[Name, Type], name: Name, ttype: Type): Map[Name, Type] =
+def extendTypes(types: Map[Object | Morphism | Name, Type], name: Object | Morphism | Name, ttype: Type): Map[Object | Morphism | Name, Type] =
   types.get(name) match
     case Some(other) => if other != ttype
       then throw SemanticError(s"more than one type assigned to $name")
       else types
     case _ => types + (name -> ttype)
 
-def translateConcatenation(types: Map[Name, Type],
+def translateConcatenation(types: Map[Object | Morphism | Name, Type],
                            c: Concatenation): logic.derivation.semantics.Construction =
   c.constructions match
     case Nil => throw IllegalArgumentException("Parser error: a concatenation of zero elements was parsed")
@@ -179,7 +200,7 @@ def translateConcatenation(types: Map[Name, Type],
         case b => throw SemanticError(s"$b is expected to be a morphism but isn't")
     })
 
-def translateConstruction(types: Map[Name, Type],
+def translateConstruction(types: Map[Object | Morphism | Name, Type],
                           c: logic.parsing.Construction): logic.derivation.semantics.Construction =
   c match
     case Atomic(name) => translateNameBound(name) match
@@ -201,8 +222,8 @@ def translateConstruction(types: Map[Name, Type],
       case casted: Object => Morphism.Identity(casted)
       case _ => throw SemanticError(s"the identity of $obj is undefined as it's not an object")
 
-def translateType(types: Map[Name, Type], t: logic.parsing.Type):
-    (logic.derivation.semantics.Type, Map[Name, Type]) =
+def translateType(types: Map[Object | Morphism | Name, Type], t: logic.parsing.Type):
+    (logic.derivation.semantics.Type, Map[Object | Morphism | Name, Type]) =
   t match
     case Cat(cat) => translateNameBound(cat) match
       case NameCapsule(casted) => (ObjectType.Cat(Category.Base(casted)),

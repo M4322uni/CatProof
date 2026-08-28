@@ -36,8 +36,8 @@ class Parser(text: String):
   private def expression[$ : P]: P[Expression] =
     P( (concatenation ~ indent_blank ~ "=" ~ indent_blank ~ concatenation)
       .map { (c1: Concatenation, c2: Concatenation) => Equation(c1, c2) }
-      | (name ~ indent_blank ~ ":" ~ indent_blank ~ ttype)
-      .map { (c: Name, t: Type) => TypeJudgement(c, t) }
+      | (concatenation ~ indent_blank ~ ":" ~ indent_blank ~ ttype)
+      .map { (c: Concatenation, t: Type) => TypeJudgement(c, t) }
     )
 
   private def ttype[$ : P]: P[Type] =
@@ -49,7 +49,7 @@ class Parser(text: String):
         case _ => Cat(cat)}
 
   private def concatenation[$ : P]: P[Concatenation] =
-    P( construction ~ (indent_blank ~ "+" ~ indent_blank ~ construction).repX )
+    P( construction ~ (indent_blank ~ ";" ~ indent_blank ~ construction).repX )
       .map { (c: Construction, s: Seq[Construction]) => Concatenation(c +: s) }
 
   private def construction[$ : P]: P[Construction] =

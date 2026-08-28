@@ -16,7 +16,7 @@ enum Formula:
 
 enum Expression:
   case Equation(left: Concatenation, right: Concatenation)
-  case TypeJudgement(subj: Name, typ: Type)
+  case TypeJudgement(subj: Concatenation, typ: Type)
 
 case class Concatenation(constructions: Seq[Construction]):
   require(constructions.nonEmpty)

@@ -7,7 +7,7 @@ import logic.derivation.semantics.*
 
 enum Condition:
   case Equation(p: Check)
-  case TypeJudgement(subj: Name, ttype: Type)
+  case TypeJudgement(subj: Object | Morphism | Name, ttype: Type)
 
 case class Check(lhs: Construction, rhs: Construction):
   (lhs, rhs) match

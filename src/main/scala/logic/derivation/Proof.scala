@@ -21,12 +21,13 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     val tst @ Tree(assumptions, goals, proof) = Parser(body)()
     val assIncludes: Map[Name, Diagram] = includes(assumptions)
     val goalIncludes: Map[Name, Diagram] = includes(goals)
-    val context: Map[Positive, Set[Condition]] = translateFormulaList(assIncludes, Map(), assumptions)
+    val (context, extablishedTypes) = translateFormulaList(assIncludes, Map(), assumptions)
+    val (goalsSet, _) = translateFormulaList(goalIncludes, extablishedTypes, goals)
     // create roots of derivation Tree
     // create context
     // run
 
-    context.flatMap(_._2).toSet
+    goalsSet.flatMap(_._2).toSet
     
 object Proof:
   
