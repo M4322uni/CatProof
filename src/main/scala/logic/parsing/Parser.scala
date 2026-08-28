@@ -83,18 +83,24 @@ class Parser(text: String):
       .map { Include.apply }
 
   private def proof[$ : P]: P[Seq[(Int, ProofStep)]] =
-    P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ rule ~ space_indent ~ reference).repX )
-      .map { (str: Seq[(Int, Rule, Seq[Positive])]) =>
-        str.map { (arg: Int, rule: Rule, refs: Seq[Positive]) => (arg, ProofStep(rule, refs)) } }
+    P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ 
+      rule ~ space_indent ~ reference ~ version.?).repX )
+      .map { (str: Seq[(Int, Rule, Seq[Positive], Option[Positive])]) =>
+        str.map { (arg: Int, rule: Rule, refs: Seq[Positive],
+                   version: Option[Positive]) => (arg, ProofStep(rule, refs, version)) } }
 
   private def rule[$ : P]: P[Rule] =
-    P( IgnoreCase("composition").map {_ => Rule.COMPOSITION}
-      | IgnoreCase("transitivity").map {_ => Rule.TRANSITIVITY} )
+    P( CharsWhileIn("A-Za-z").! )
+      .map { Rule.apply }
 
   private def reference[$ : P]: P[Seq[Positive]] =
     P( IgnoreCase("with") ~ space_indent ~ line ~ ("," ~ space_indent ~ line).repX )
       .map { (p: Positive, s: Seq[Positive]) => p +: s }
 
+  private def version[$ : P]: P[Positive] =
+    P( IgnoreCase("version") ~ space_indent ~ CharIn("1-9").! )
+      .map { _.toInt }
+  
   private def line[$ : P]: P[Positive] =
     P( CharIn("1-9").! ~ CharsWhileIn("0-9", 0).! )
       .map { (s1: String, s2: String) => (s1 + s2).toInt }

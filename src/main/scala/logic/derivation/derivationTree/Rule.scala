@@ -16,6 +16,4 @@ case class Check(lhs: Construction, rhs: Construction):
          | (_: Object, _: Object) =>
     case _ => throw SemanticError(s"$lhs and $rhs are not of the same type")
 
-case class Sequent(antecedent: Set[Condition], consequent: Set[Condition])
-
-case class Rule(pre: Set[Sequent], post: Set[Sequent])
+class Rule(name: String)

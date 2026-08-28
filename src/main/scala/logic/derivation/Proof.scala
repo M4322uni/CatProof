@@ -22,12 +22,12 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     val assIncludes: Map[Name, Diagram] = includes(assumptions)
     val goalIncludes: Map[Name, Diagram] = includes(goals)
     val (context, extablishedTypes) = translateFormulaList(assIncludes, Map(), assumptions)
-    val (goalsSet, _) = translateFormulaList(goalIncludes, extablishedTypes, goals)
+    val (goalsMap, _) = translateFormulaList(goalIncludes, extablishedTypes, goals)
     // create roots of derivation Tree
     // create context
     // run
-
-    goalsSet.flatMap(_._2).toSet
+    val result: ProofResult = createProof(context, goalsMap.flatMap(_._2).toSet, proof)
+    result
     
 object Proof:
   
