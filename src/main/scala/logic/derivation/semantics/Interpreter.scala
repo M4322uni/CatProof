@@ -46,25 +46,13 @@ def translateFormula(map: Map[Name, Diagram],
 def translateDiagram(types: Map[Object | Morphism | Name, Type],
                      diag: Diagram): (Set[Condition], Map[Object | Morphism | Name, Type]) =
 
-  def createTypes(morphisms: Seq[(Object, Object, Morphism)]): Map[Name, Type] =
+  def createTypes(morphisms: Seq[(Object, Object, Morphism)]): Map[Object | Morphism | Name, Type] =
     morphisms match
       case (dom @ Object.Base(name1), cod @ Object.Base(name2), Morphism.Base(name3)) :: tail =>
         val res = createTypes(tail)
-        val res1 = res ++ (res.get(name1) match
-          case Some(x) => if x != ObjectType.Cat(diag.cat)
-            then throw SemanticError(s"${diag.name} has contradicting types for $name1")
-            else Map()
-          case _ => Map(name1 -> ObjectType.Cat(diag.cat)))
-        val res2 = res1 ++ (res1.get(name2) match
-          case Some(x) => if x != ObjectType.Cat(diag.cat)
-            then throw SemanticError(s"${diag.name} has contradicting types for $name2")
-            else Map()
-          case _ => Map(name2 -> ObjectType.Cat(diag.cat)))
-        res2 ++ (res2.get(name3) match
-          case Some(x) => if x != MorphismType.HomSet(diag.cat, dom, cod)
-            then throw SemanticError(s"${diag.name} has contradicting types for $name3")
-            else Map()
-          case _ => Map(name3 -> MorphismType.HomSet(diag.cat, dom, cod)))
+        val r1 = extendTypes(res, name1, ObjectType.Cat(diag.cat))
+        val r2 = extendTypes(r1, name2, ObjectType.Cat(diag.cat))
+        extendTypes(r2, name3, MorphismType.HomSet(diag.cat, dom, cod))
       case Nil => Map()
       case _ => throw IllegalArgumentException("Diagrams with constructions not yet implemented")
 
@@ -118,7 +106,7 @@ def translateDiagram(types: Map[Object | Morphism | Name, Type],
       Map().withDefaultValue(Map().withDefaultValue(Set())))
 
   // type all the edges and nodes
-  val typesAdd: Map[Name, Type] =
+  val typesAdd: Map[Object | Morphism | Name, Type] =
     createTypes(
       diag.adjacency.toSeq.flatMap{ (dom: Object, morphs: Set[(Morphism, Object)])
       => morphs.toSeq.map { (morph: Morphism, cod: Object) => (dom, cod, morph) }
@@ -130,10 +118,7 @@ def translateDiagram(types: Map[Object | Morphism | Name, Type],
     typesAdd.keys.toSet.map {
       name => if types.contains(name) then
                 if types(name) != typesAdd(name)
-                    then
-                      println(types(name))
-                      println(typesAdd(name))
-                      throw SemanticError(s"more than one type assigned to $name")
+                    then throw SemanticError(s"more than one type assigned to $name")
                 else None
               else Some(Condition.TypeJudgement(name, typesAdd(name)))
     }. collect {
