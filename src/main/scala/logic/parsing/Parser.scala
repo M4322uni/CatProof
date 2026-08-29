@@ -84,22 +84,34 @@ class Parser(text: String):
 
   private def proof[$ : P]: P[Seq[(Int, ProofStep)]] =
     P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ 
-      rule ~ space_indent ~ reference ~ version.?).repX )
-      .map { (str: Seq[(Int, Rule, Seq[Positive], Option[Positive])]) =>
-        str.map { (arg: Int, rule: Rule, refs: Seq[Positive],
-                   version: Option[Positive]) => (arg, ProofStep(rule, refs, version)) } }
+      rule ~ space_indent ~ reference).repX )
+      .map { (str: Seq[(Int, Rule, Seq[(Positive, Option[Positive])])]) =>
+        str.map { (arg: Int, rule: Rule, refs: Seq[(Positive, Option[Positive])]) 
+        => (arg, ProofStep(rule, refs)) } }
 
   private def rule[$ : P]: P[Rule] =
     P( CharsWhileIn("A-Za-z").! )
       .map { Rule.apply }
 
-  private def reference[$ : P]: P[Seq[Positive]] =
-    P( IgnoreCase("with") ~ space_indent ~ line ~ ("," ~ space_indent ~ line).repX )
-      .map { (p: Positive, s: Seq[Positive]) => p +: s }
+  private def reference[$ : P]: P[Seq[(Positive, Option[Positive])]] =
+    P( IgnoreCase("with") ~ space_indent ~ line_couple ~ and )
+      .map {
+        (p: Positive, o: Option[Positive], s: Seq[(Positive, Option[Positive])])
+        => (p, o) +: s
+      }
 
-  private def version[$ : P]: P[Positive] =
-    P( IgnoreCase("version") ~ space_indent ~ CharIn("1-9").! )
-      .map { _.toInt }
+  private def application[$ : P]: P[Seq[(Positive, Option[Positive])]] =
+    P(IgnoreCase("for") ~ space_indent ~ line_couple ~ and)
+      .map {
+        (p: Positive, o: Option[Positive], s: Seq[(Positive, Option[Positive])]) 
+        => (p, o) +: s
+      }
+
+  private def and[$ : P]: P[Seq[(Positive, Option[Positive])]] =
+    P( ("," ~ space_indent ~ line_couple).repX )
+
+  private def line_couple[$ : P]: P[(Positive, Option[Positive])] =
+    P( line ~ ("-" ~ line).? )
   
   private def line[$ : P]: P[Positive] =
     P( CharIn("1-9").! ~ CharsWhileIn("0-9", 0).! )

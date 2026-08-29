@@ -20,7 +20,7 @@ class SemanticError(message: String)
 
 def translateFormulaList(map: Map[Name, Diagram],
                          types: Map[Object | Morphism | Name, Type],
-                         s: Seq[(Positive, Formula)]): (Map[Positive, Set[Condition]], Map[Object | Morphism | Name, Type]) =
+                         s: Seq[(Positive, Formula)]): (Map[Positive, Seq[Condition]], Map[Object | Morphism | Name, Type]) =
   s match
     case h :: tail =>
       val (conds, type_res) = translateFormula(map, types, h)
@@ -30,7 +30,7 @@ def translateFormulaList(map: Map[Name, Diagram],
 
 def translateFormula(map: Map[Name, Diagram],
                      types: Map[Object | Morphism | Name, Type],
-                     tup: (Positive, Formula)): ((Positive, Set[Condition]), Map[Object | Morphism | Name, Type]) =
+                     tup: (Positive, Formula)): ((Positive, Seq[Condition]), Map[Object | Morphism | Name, Type]) =
   val (p, f) = tup
   f match
     case Include(diagram) =>
@@ -41,10 +41,10 @@ def translateFormula(map: Map[Name, Diagram],
       (p -> conds, newTypes)
     case Expr(exp) =>
       val (cond, newTypes) = translateExpression(types, exp)
-      (p -> Set(cond), newTypes)
+      (p -> Seq(cond), newTypes)
 
 def translateDiagram(types: Map[Object | Morphism | Name, Type],
-                     diag: Diagram): (Set[Condition], Map[Object | Morphism | Name, Type]) =
+                     diag: Diagram): (Seq[Condition], Map[Object | Morphism | Name, Type]) =
 
   def createTypes(morphisms: Seq[(Object, Object, Morphism)]): Map[Object | Morphism | Name, Type] =
     morphisms match
@@ -136,7 +136,7 @@ def translateDiagram(types: Map[Object | Morphism | Name, Type],
     } yield Condition.Equation(Check(first, morph))
   ).toSet
 
-  (conditionAdd ++ eqConditions, types ++ typesAdd)
+  ((conditionAdd ++ eqConditions).toSeq, types ++ typesAdd)
 
 def translateExpression(types: Map[Object | Morphism | Name, Type],
                         e: Expression): (Condition, Map[Object | Morphism | Name, Type]) =
