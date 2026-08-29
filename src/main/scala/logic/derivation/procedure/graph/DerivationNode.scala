@@ -1,19 +1,31 @@
 package logic.derivation.procedure.graph
 
-import logic.derivation.procedure.{Condition, DerivationError}
+import logic.derivation.procedure.{Condition, DerivationError, Rule}
 import utils.Positive
 
 class DerivationNode(
 //                     context: Set[Condition],
-                     ins: Vector[Condition],
-                     attachments: Vector[Option[(DerivationNode, Positive)]],
-                     outs: Vector[Condition]
+                     rule: Rule,
+                     attachments: Vector[Option[DerivationNode]],
                      ):
 
-  def attach(other: DerivationNode, map: Seq[(Positive, Positive)]): DerivationNode =
-    map.find((in: Positive, _) => attachments(in - 1).nonEmpty) match
-      case Some(in, _) =>
-        throw DerivationError(s"there are more then one derivations of ${ins(in)} in the provided proof")
-      case _ => DerivationNode(ins, map.foldLeft(attachments) {
-        (vect, couple) => vect.updated(couple._1, Some(other, couple._2))
-      }, outs)
+  def attach(other: DerivationNode, pos: Positive): DerivationNode =
+    rule.pre match
+      case vect: Vector[?] =>
+        attachments(pos - 1) match
+          case Some(_) =>
+            throw DerivationError(s"there are more then one derivations of ${vect(pos-1)} in the provided proof")
+          case _ => DerivationNode(rule, attachments.updated(pos-1, Some(other))) //TODO: try-catch
+      case _ => throw DerivationError(s"$rule has no antecedent, it cant have an attachment")
+
+object DerivationNode:
+
+  private def apply(rule: Rule,
+                    attachments: Vector[Option[DerivationNode]]): DerivationNode =
+    new DerivationNode(rule, attachments)
+
+  def apply(rule: Rule): DerivationNode =
+    rule.pre match
+      case vect: Vector[?] =>
+        apply(rule, Vector.fill(vect.size)(None))
+      case _ => apply(rule, Vector.empty)

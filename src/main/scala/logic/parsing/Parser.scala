@@ -84,13 +84,13 @@ class Parser(text: String):
 
   private def proof[$ : P]: P[Seq[(Int, ProofStep)]] =
     P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ 
-      rule ~ space_indent ~ reference).repX )
-      .map { (str: Seq[(Int, Rule, Seq[(Positive, Option[Positive])])]) =>
-        str.map { (arg: Int, rule: Rule, refs: Seq[(Positive, Option[Positive])]) 
-        => (arg, ProofStep(rule, refs)) } }
+      rule ~ space_indent ~ reference ~ space_indent ~ application).repX )
+      .map { (str: Seq[(Int, Rule, Seq[(Positive, Option[Positive])], (Positive, Option[Positive]))]) =>
+        str.map { (arg: Int, rule: Rule, refs: Seq[(Positive, Option[Positive])],
+                   app: (Positive, Option[Positive])) => (arg, ProofStep(rule, refs, app)) } }
 
   private def rule[$ : P]: P[Rule] =
-    P( CharsWhileIn("A-Za-z").! )
+    P( name ~ ("(" ~ CharsWhile(_ != ')').! ~ ")").? )
       .map { Rule.apply }
 
   private def reference[$ : P]: P[Seq[(Positive, Option[Positive])]] =
@@ -100,12 +100,8 @@ class Parser(text: String):
         => (p, o) +: s
       }
 
-  private def application[$ : P]: P[Seq[(Positive, Option[Positive])]] =
-    P(IgnoreCase("for") ~ space_indent ~ line_couple ~ and)
-      .map {
-        (p: Positive, o: Option[Positive], s: Seq[(Positive, Option[Positive])]) 
-        => (p, o) +: s
-      }
+  private def application[$ : P]: P[(Positive, Option[Positive])] =
+    P( IgnoreCase("for") ~ space_indent ~ line_couple )
 
   private def and[$ : P]: P[Seq[(Positive, Option[Positive])]] =
     P( ("," ~ space_indent ~ line_couple).repX )

@@ -34,6 +34,7 @@ enum Type:
 enum NameBound:
   case Base(name: Name)
 
-case class ProofStep(rule: Rule, lines: Seq[(Positive, Option[Positive])])
+case class ProofStep(rule: Rule, pre: Seq[(Positive, Option[Positive])],
+                     post: (Positive, Option[Positive]))
 
-case class Rule(name: String)
+case class Rule(name: Name, args: Option[String])
