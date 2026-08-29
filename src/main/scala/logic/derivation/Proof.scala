@@ -1,6 +1,6 @@
 package logic.derivation
 
-import logic.derivation.derivationTree.Condition
+import logic.derivation.procedure.{Condition, createProof}
 import logic.parsing.*
 import logic.parsing.Formula.Include
 import logic.derivation.semantics.*
@@ -26,7 +26,7 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     // create roots of derivation Tree
     // create context
     // run
-    val result: ProofResult = createProof(context, goalsMap.flatMap(_._2).toSet, proof)
+    val result: ProofResult = createProof(context, goalsMap, proof)
     result
     
 object Proof:

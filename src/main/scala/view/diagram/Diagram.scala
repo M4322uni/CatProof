@@ -234,5 +234,3 @@ object Diagram:
   private val GROWTH_MARGIN = 10
   private val MAX_WIDTH = 2500
   private val MAX_HEIGHT = 2500
-
-  def apply(): Diagram = new Diagram

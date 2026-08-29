@@ -161,6 +161,3 @@ class Parser(text: String):
 
       case f: Parsed.Failure =>
         throw IllegalArgumentException(errorPretty(f))
-
-object Parser:
-  def apply(text: String) = new Parser(text)

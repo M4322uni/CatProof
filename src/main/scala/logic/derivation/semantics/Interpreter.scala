@@ -1,8 +1,8 @@
 package logic.derivation.semantics
 
 import logic.derivation.Diagram
-import logic.derivation.derivationTree.*
-import logic.derivation.derivationTree.Condition.TypeJudgement
+import logic.derivation.procedure.*
+import logic.derivation.procedure.Condition.TypeJudgement
 import logic.parsing.{Concatenation, Construction, Expression, Formula, NameBound}
 import logic.parsing.Construction.*
 import logic.parsing.NameBound.*

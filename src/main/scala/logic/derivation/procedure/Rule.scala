@@ -1,4 +1,4 @@
-package logic.derivation.derivationTree
+package logic.derivation.procedure
 
 import utils.Name
 import logic.derivation.semantics.*
@@ -15,5 +15,3 @@ case class Check(lhs: Construction, rhs: Construction):
          | (_: Morphism, _: Morphism)
          | (_: Object, _: Object) =>
     case _ => throw SemanticError(s"$lhs and $rhs are not of the same type")
-
-case class Branch(antecedentExp: Set[Condition], consequent: Condition)
