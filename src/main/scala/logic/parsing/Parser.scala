@@ -15,10 +15,10 @@ class Parser(text: String):
     text.take(until+1).count(_ == '\n') + 1
 
   private def start[$ : P]: P[FakeTree] =
-    P(newBlank ~ IgnoreCase("assumptions:") ~ formula ~ newBlank ~
+    P(newBlank ~ IgnoreCase("assumptions:") ~ formulaStripped ~ newBlank ~
         IgnoreCase("goals:") ~ formula ~ newBlank ~
         IgnoreCase("proof:") ~ proof ~ blank ~ End)
-      .map { (ass: Seq[(Int, Formula)],
+      .map { (ass: Seq[Formula],
               goal: Seq[(Int, Formula)],
               proof: Seq[(Int, ProofStep)])
         => FakeTree(ass, goal, proof) }
@@ -28,6 +28,10 @@ class Parser(text: String):
 
   private def blank[$ : P]: P[Unit] =
     P( CharsWhileIn("\t\n ", 0) )
+    
+  private def formulaStripped[$ : P]: P[Seq[Formula]] =
+    P( hard_indent ~ (include | expression.map { Expr.apply }) )
+      .repX
 
   private def formula[$ : P]: P[Seq[(Int, Formula)]] =
     P( hard_indent ~ Index ~ (include | expression.map{ Expr.apply }) )
@@ -84,27 +88,23 @@ class Parser(text: String):
 
   private def proof[$ : P]: P[Seq[(Int, ProofStep)]] =
     P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ 
-      rule ~ space_indent ~ reference ~ space_indent ~ application).repX )
-      .map { (str: Seq[(Int, Rule, Seq[(Positive, Option[Positive])], (Positive, Option[Positive]))]) =>
-        str.map { (arg: Int, rule: Rule, refs: Seq[(Positive, Option[Positive])],
-                   app: (Positive, Option[Positive])) => (arg, ProofStep(rule, refs, app)) } }
+      rule ~ space_indent ~ application).repX )
+      .map { (str: Seq[(Int, Rule, (Positive, Option[Positive]))]) =>
+        str.map { (arg: Int, rule: Rule, app: (Positive, Option[Positive])) =>
+          app match
+            case (p1, Some(p2)) => (arg, ProofStep(rule, (p1, p2-1)))
+            case (p, _) => (arg, ProofStep(rule, (p, 0)))
+        } }
 
   private def rule[$ : P]: P[Rule] =
     P( name ~ ("(" ~ CharsWhile(_ != ')').! ~ ")").? )
       .map { Rule.apply }
-
-  private def reference[$ : P]: P[Seq[(Positive, Option[Positive])]] =
-    P( IgnoreCase("with") ~ space_indent ~ line_couple ~ and )
-      .map {
-        (p: Positive, o: Option[Positive], s: Seq[(Positive, Option[Positive])])
-        => (p, o) +: s
-      }
-
+  
   private def application[$ : P]: P[(Positive, Option[Positive])] =
     P( IgnoreCase("for") ~ space_indent ~ line_couple )
 
-  private def and[$ : P]: P[Seq[(Positive, Option[Positive])]] =
-    P( ("," ~ space_indent ~ line_couple).repX )
+//  private def and[$ : P]: P[Seq[(Positive, Option[Positive])]] =
+//    P( ("," ~ space_indent ~ line_couple).repX )
 
   private def line_couple[$ : P]: P[(Positive, Option[Positive])] =
     P( line ~ ("-" ~ line).? )
@@ -117,17 +117,14 @@ class Parser(text: String):
     P( CharsWhileIn("\t ", 0) )
 
   private def fix(tree: FakeTree): Tree =
-    val FakeTree(assumption: Seq[(Int, Formula)],
+    val FakeTree(assumption: Seq[Formula],
       goals: Seq[(Int, Formula)],
       proof: Seq[(Int, ProofStep)]) = tree
-    val (assumption2: Seq[(Positive, Formula)],
-      lastIndex: Int,
-      lastLine: Positive) = fix(assumption)
     val (goals2: Seq[(Positive, Formula)],
-      lastIndex2: Int,
-      lastLine2: Positive) = fix(goals, lastIndex, lastLine)
-    val (proof2: Seq[(Positive, ProofStep)], _, _) = fix(proof, lastIndex2, lastLine2)
-    Tree(assumption2, goals2, proof2)
+      lastIndex: Int,
+      lastLine: Positive) = fix(goals)
+    val (proof2: Seq[(Positive, ProofStep)], _, _) = fix(proof, lastIndex, lastLine)
+    Tree(assumption, goals2, proof2)
 
   private def fix[T](s: Seq[(Int, T)], lastIndex: Int = 0, lastLine: Positive = 1): (Seq[(Positive, T)], Int, Positive) =
     val strip: Seq[Int] = s.map { _._1 }

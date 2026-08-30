@@ -1,31 +1,30 @@
 package logic.derivation.procedure.graph
 
-import logic.derivation.procedure.{Condition, DerivationError, Rule}
+import logic.derivation.procedure.{DerivationError, RuleResult}
 import utils.Positive
 
-class DerivationNode(
-//                     context: Set[Condition],
-                     rule: Rule,
-                     attachments: Vector[Option[DerivationNode]],
+class DerivationNode private(
+                              ruleResult: RuleResult,
+                              attachments: Vector[Option[DerivationNode]],
                      ):
 
-  def attach(other: DerivationNode, pos: Positive): DerivationNode =
-    rule.pre match
-      case vect: Vector[?] =>
+  def attach(other: DerivationNode, pos: Int): DerivationNode =
+    ruleResult.pre match
+      case Some(vect) =>
         attachments(pos - 1) match
           case Some(_) =>
-            throw DerivationError(s"there are more then one derivations of ${vect(pos-1)} in the provided proof")
-          case _ => DerivationNode(rule, attachments.updated(pos-1, Some(other))) //TODO: try-catch
-      case _ => throw DerivationError(s"$rule has no antecedent, it cant have an attachment")
+            throw DerivationError(s"there are more then one derivations of ${vect(pos)} in the provided proof")
+          case _ => DerivationNode(ruleResult, attachments.updated(pos, Some(other))) //TODO: try-catch
+      case _ => throw DerivationError(s"$ruleResult has no antecedent, it cant have an attachment")
 
 object DerivationNode:
 
-  private def apply(rule: Rule,
+  private def apply(ruleResult: RuleResult,
                     attachments: Vector[Option[DerivationNode]]): DerivationNode =
-    new DerivationNode(rule, attachments)
+    new DerivationNode(ruleResult, attachments)
 
-  def apply(rule: Rule): DerivationNode =
-    rule.pre match
-      case vect: Vector[?] =>
-        apply(rule, Vector.fill(vect.size)(None))
-      case _ => apply(rule, Vector.empty)
+  def apply(ruleResult: RuleResult): DerivationNode =
+    ruleResult.pre match
+      case Some(vect) =>
+        apply(ruleResult, Vector.fill(vect.size)(None))
+      case _ => apply(ruleResult, Vector.empty)

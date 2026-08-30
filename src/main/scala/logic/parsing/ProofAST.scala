@@ -2,11 +2,11 @@ package logic.parsing
 
 import utils.*
 
-private[parsing] case class FakeTree(assumptions: Seq[(Int, Formula)],
+private[parsing] case class FakeTree(assumptions: Seq[Formula],
                                      goals: Seq[(Int, Formula)],
                                      proof: Seq[(Int, ProofStep)])
 
-case class Tree(assumptions: Seq[(Positive, Formula)],
+case class Tree(assumptions: Seq[Formula],
                 goals: Seq[(Positive, Formula)],
                 proof: Seq[(Positive, ProofStep)])
 
@@ -34,7 +34,6 @@ enum Type:
 enum NameBound:
   case Base(name: Name)
 
-case class ProofStep(rule: Rule, pre: Seq[(Positive, Option[Positive])],
-                     post: (Positive, Option[Positive]))
+case class ProofStep(rule: Rule, post: (Positive, Int))
 
 case class Rule(name: Name, args: Option[String])

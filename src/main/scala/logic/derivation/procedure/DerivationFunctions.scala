@@ -7,7 +7,7 @@ import utils.Positive
 class DerivationError(message: String)
   extends IllegalArgumentException(s"Derivation error: $message")
 
-def createProof(context: Map[Positive, Seq[Condition]],
+def createProof(context: Seq[Condition],
                 goals: Map[Positive, Seq[Condition]],
                 proof: Seq[(utils.Positive, logic.parsing.ProofStep)]): ProofResult =
   ???

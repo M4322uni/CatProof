@@ -18,30 +18,40 @@ class SemanticError(message: String)
   extends IllegalArgumentException(s"Semantic error: $message")
 
 
-def translateFormulaList(map: Map[Name, Diagram],
-                         types: Map[Object | Morphism | Name, Type],
-                         s: Seq[(Positive, Formula)]): (Map[Positive, Seq[Condition]], Map[Object | Morphism | Name, Type]) =
+def translateAssList(map: Map[Name, Diagram],
+                     types: Map[Object | Morphism | Name, Type],
+                     s: Seq[Formula]): (Seq[Condition], Map[Object | Morphism | Name, Type]) =
   s match
     case h :: tail =>
       val (conds, type_res) = translateFormula(map, types, h)
-      val (condsL, type_resL) = translateFormulaList(map, type_res, tail)
-      (condsL + conds, type_resL)
+      val (condsL, type_resL) = translateAssList(map, type_res, tail)
+      (condsL ++ conds, type_resL)
+    case Nil => (Seq(), types)
+
+
+def translateGoalList(map: Map[Name, Diagram],
+                         types: Map[Object | Morphism | Name, Type],
+                         s: Seq[(Positive, Formula)]): (Map[Positive, Seq[Condition]], Map[Object | Morphism | Name, Type]) =
+  s match
+    case (index, formula) :: tail =>
+      val (conds, type_res) = translateFormula(map, types, formula)
+      val (condsL, type_resL) = translateGoalList(map, type_res, tail)
+      (condsL + (index -> conds), type_resL)
     case Nil => (Map(), types)
 
 def translateFormula(map: Map[Name, Diagram],
                      types: Map[Object | Morphism | Name, Type],
-                     tup: (Positive, Formula)): ((Positive, Seq[Condition]), Map[Object | Morphism | Name, Type]) =
-  val (p, f) = tup
+                     f: Formula): (Seq[Condition], Map[Object | Morphism | Name, Type]) =
   f match
     case Include(diagram) =>
       val (conds, newTypes) = translateDiagram(types, map.get(diagram) match
         case Some(d) => d
         case None => throw SemanticError(s"the $diagram diagram cannot be found")
       )
-      (p -> conds, newTypes)
+      (conds, newTypes)
     case Expr(exp) =>
       val (cond, newTypes) = translateExpression(types, exp)
-      (p -> Seq(cond), newTypes)
+      (Seq(cond), newTypes)
 
 def translateDiagram(types: Map[Object | Morphism | Name, Type],
                      diag: Diagram): (Seq[Condition], Map[Object | Morphism | Name, Type]) =
@@ -96,7 +106,7 @@ def translateDiagram(types: Map[Object | Morphism | Name, Type],
                 map.map { (obj, morph) => morph }.toSet }.withDefaultValue(Set())
 
           val morphsMerge: Map[Object, Set[Morphism]] =
-            (morphs.keys.toSet ++ morphs2.keys.toSet).map {
+            (morphs.keys.toSet ++ morphs2.keys).map {
               num => num -> (morphs(num) ++ morphs2(num))
             }.toMap
 
