@@ -97,8 +97,12 @@ class Parser(text: String):
         } }
 
   private def rule[$ : P]: P[Rule] =
-    P( name ~ ("(" ~ CharsWhile(_ != ')').! ~ ")").? )
+    P( name ~ ("(" ~ escapePar ~ ")").? )
       .map { Rule.apply }
+
+  private def escapePar[$ : P]: P[String] =
+    P( "\\)".map(_ => ")") | CharPred(_ != ')').! )
+      .repX(1).map { _.mkString }
   
   private def application[$ : P]: P[(Positive, Option[Positive])] =
     P( IgnoreCase("for") ~ space_indent ~ line_couple )

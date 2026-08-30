@@ -15,5 +15,3 @@ case class Check(lhs: Construction, rhs: Construction):
          | (_: Morphism, _: Morphism)
          | (_: Object, _: Object) =>
     case _ => throw SemanticError(s"$lhs and $rhs are not of the same type")
- 
-case class RuleResult(pre: Option[Vector[(Set[Condition], Condition)]], post: Condition)
