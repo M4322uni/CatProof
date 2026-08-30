@@ -50,11 +50,12 @@ object DerivationGraph:
   def unify(left: Condition, right: Condition): (Condition, Map[Parameter, Construction]) =
     ???
 
-  @tailrec
   private def unifyCategories(left: Category,
                               right: Category): (Category, Map[Parameter, Construction]) =
     left match
-      case Category.X(param) => (right, Map(param -> right))
+      case Category.X(param1) => ( right, right match
+        case Category.X(param2) if param1 == param2 => Map()
+        case _ => Map(param1 -> right) )
       case Category.Base(name1) => right match
         case Category.X(param) => (left, Map(param -> left))
         case Category.Base(name2) => if name1 == name2 then (left, Map())
@@ -63,12 +64,14 @@ object DerivationGraph:
   private def unifyMorphisms(left: Morphism,
                             right: Morphism): (Morphism, Map[Parameter, Construction]) =
     left match
-      case Morphism.X(param) => (right, Map(param -> right))
+      case Morphism.X(param1) => ( right, right match
+        case Morphism.X(param2) if param1 == param2 => Map()
+        case _ => Map(param1 -> right) )
       case Identity(obj1) => right match
         case Identity(obj2) =>
           val (res, map) = unifyObjects(obj1, obj2)
           (Identity(res), map)
-        case Morphism.X(param) => (left -> Map(param -> left))
+        case Morphism.X(param) => (left, Map(param -> left))
         case _ => throw UnificationError()
 
   private def unifyObjects(left: Object,
