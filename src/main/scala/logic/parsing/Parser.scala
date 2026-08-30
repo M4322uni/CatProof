@@ -88,13 +88,22 @@ class Parser(text: String):
 
   private def proof[$ : P]: P[Seq[(Int, ProofStep)]] =
     P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ 
-      rule ~ space_indent ~ application).repX )
-      .map { (str: Seq[(Int, Rule, (Positive, Option[Positive]))]) =>
-        str.map { (arg: Int, rule: Rule, app: (Positive, Option[Positive])) =>
+      rule ~ space_indent ~ application ~ space_indent ~ subst).repX )
+      .map { (str: Seq[(Int, Rule, (Positive, Option[Positive]), 
+        Seq[(Name, Concatenation)])]) =>
+        str.map { (arg: Int, rule: Rule, app: (Positive, Option[Positive]), 
+                   map: Seq[(Name, Concatenation)]) =>
           app match
-            case (p1, Some(p2)) => (arg, ProofStep(rule, (p1, p2-1)))
-            case (p, _) => (arg, ProofStep(rule, (p, 0)))
+            case (p1, Some(p2)) => (arg, ProofStep(rule, (p1, p2-1), map))
+            case (p, _) => (arg, ProofStep(rule, (p, 0), map))
         } }
+    
+  private def subst[$ : P]: P[Seq[(Name, Concatenation)]] =
+    P( IgnoreCase("mapping") ~ space_indent ~ bind ~ ("," ~ space_indent ~ bind).repX )
+      .map { (n: Name, c: Concatenation, s: Seq[(Name, Concatenation)]) => (n, c) +: s }
+    
+  private def bind[$ : P]: P[(Name, Concatenation)] =
+    P( name ~ space_indent ~ "to" ~ space_indent ~ concatenation )
 
   private def rule[$ : P]: P[Rule] =
     P( name ~ ("(" ~ escapePar ~ ")").? )
@@ -130,7 +139,8 @@ class Parser(text: String):
     val (proof2: Seq[(Positive, ProofStep)], _, _) = fix(proof, lastIndex, lastLine)
     Tree(assumption, goals2, proof2)
 
-  private def fix[T](s: Seq[(Int, T)], lastIndex: Int = 0, lastLine: Positive = 1): (Seq[(Positive, T)], Int, Positive) =
+  private def fix[T](s: Seq[(Int, T)], lastIndex: Int = 0, 
+                     lastLine: Positive = 1): (Seq[(Positive, T)], Int, Positive) =
     val strip: Seq[Int] = s.map { _._1 }
     val seq: Seq[(Int, T)] =
       (lastIndex +: strip ).zip(s).map {

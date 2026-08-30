@@ -1,6 +1,7 @@
 package logic.derivation.semantics
 
-import utils.Name
+import logic.parsing.Rule
+import utils.{Name, Positive}
 
 type Construction = Category | Morphism | Object
 
@@ -21,3 +22,5 @@ enum Object:
   case Domain(morph: Morphism)
   case Codomain(morph: Morphism)
   case X(parameter: Parameter)
+  
+case class ProofStep(rule: Rule, post: (Positive, Int), map: Map[Name, Construction])

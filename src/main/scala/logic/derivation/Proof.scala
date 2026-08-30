@@ -26,8 +26,9 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     val tst @ Tree(assumptions, goals, proof) = Parser(body)()
     val assIncludes: Map[Name, Diagram] = includes(assumptions)
     val goalIncludes: Map[Name, Diagram] = includes(goals)
-    val (context, extablishedTypes) = translateAssList(assIncludes, Map(), assumptions)
-    val (goalsMap, _) = translateGoalList(goalIncludes, extablishedTypes, goals)
+    val (context, establishedTypes) = translateAssList(assIncludes, Map(), assumptions)
+    val (goalsMap, _) = translateGoalList(goalIncludes, establishedTypes, goals)
+    val steps = proof.map { translateProofStep(establishedTypes, _) }
     // create roots of derivation Tree
     // create context
     // run
