@@ -1,7 +1,7 @@
 package logic.derivation.procedure.graph
 
 import logic.derivation.procedure.{Condition, DerivationError}
-import logic.derivation.semantics.{Category, Construction, Morphism, Object, Parameter}
+import logic.derivation.semantics.{Category, Construction, Morphism, Object}
 import logic.derivation.semantics.Category.*
 import logic.derivation.semantics.Morphism.*
 import logic.derivation.semantics.ProofStep
