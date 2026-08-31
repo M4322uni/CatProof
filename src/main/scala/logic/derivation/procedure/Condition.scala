@@ -5,7 +5,7 @@ import logic.derivation.semantics.*
 
 //TODO: tidy up
 
-type TypeSubj = Object | Morphism | Name
+type TypeSubj = Object | Morphism
 
 enum Condition:
   case Equation(p: Check)

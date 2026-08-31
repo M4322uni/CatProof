@@ -32,8 +32,9 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     // create roots of derivation Tree
     // create context
     // run
-    val result: ProofResult = createProof(context, goalsMap, proof)
-    result
+//    val result: ProofResult = createProof(context, goalsMap, proof)
+//    result
+    context.toSet
     
 object Proof:
   

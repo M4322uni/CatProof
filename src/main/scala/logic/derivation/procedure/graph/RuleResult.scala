@@ -107,4 +107,4 @@ object RuleResult:
       case Object.Parameter(name) => subst.get(name) match
         case Some(value: Object) => value
         case None => throw SubstitutionError(s"no mapping found for parameter $name")
-        case _ => throw SubstitutionError(s"the value mapped to $name is not of the correct type") 
+        case _ => throw SubstitutionError(s"the value mapped to $name is not of the correct type")

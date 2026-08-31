@@ -10,7 +10,7 @@ import logic.parsing.Formula.*
 import logic.parsing.Type.*
 import logic.derivation.semantics.*
 import TranslateCapsule.*
-import logic.derivation.semantics.Morphism.{Identity}
+import logic.derivation.semantics.Morphism.Identity
 import utils.{Name, Positive}
 
 import scala.annotation.tailrec
@@ -21,8 +21,8 @@ class SemanticError(message: String)
 
 
 def translateAssList(map: Map[Name, Diagram],
-                     types: Map[TypeSubj, Type],
-                     s: Seq[Formula]): (Seq[Condition], Map[TypeSubj, Type]) =
+                     types: Map[Name, Type],
+                     s: Seq[Formula]): (Seq[Condition], Map[Name, Type]) =
   s match
     case h :: tail =>
       val (conds, type_res) = translateFormula(map, types, h)
@@ -32,8 +32,8 @@ def translateAssList(map: Map[Name, Diagram],
 
 
 def translateGoalList(map: Map[Name, Diagram],
-                         types: Map[TypeSubj, Type],
-                         s: Seq[(Positive, Formula)]): (Map[Positive, Seq[Condition]], Map[TypeSubj, Type]) =
+                         types: Map[Name, Type],
+                         s: Seq[(Positive, Formula)]): (Map[Positive, Seq[Condition]], Map[Name, Type]) =
   s match
     case (index, formula) :: tail =>
       val (conds, type_res) = translateFormula(map, types, formula)
@@ -42,8 +42,8 @@ def translateGoalList(map: Map[Name, Diagram],
     case Nil => (Map(), types)
 
 private def translateFormula(map: Map[Name, Diagram],
-                     types: Map[TypeSubj, Type],
-                     f: Formula): (Seq[Condition], Map[TypeSubj, Type]) =
+                     types: Map[Name, Type],
+                     f: Formula): (Seq[Condition], Map[Name, Type]) =
   f match
     case Include(diagram) =>
       val (conds, newTypes) = translateDiagram(types, map.get(diagram) match
@@ -55,10 +55,10 @@ private def translateFormula(map: Map[Name, Diagram],
       val (cond, newTypes) = translateExpression(types, exp)
       (Seq(cond), newTypes)
 
-private def translateDiagram(types: Map[TypeSubj, Type],
-                     diag: Diagram): (Seq[Condition], Map[TypeSubj, Type]) =
+private def translateDiagram(types: Map[Name, Type],
+                     diag: Diagram): (Seq[Condition], Map[Name, Type]) =
 
-  def createTypes(morphisms: Seq[(Object, Object, Morphism)]): Map[TypeSubj, Type] =
+  def createTypes(morphisms: Seq[(Object, Object, Morphism)]): Map[Name, Type] =
     morphisms match
       case (dom @ Object.Base(name1), cod @ Object.Base(name2), Morphism.Base(name3)) :: tail =>
         val res = createTypes(tail)
@@ -118,7 +118,7 @@ private def translateDiagram(types: Map[TypeSubj, Type],
       Map().withDefaultValue(Map().withDefaultValue(Set())))
 
   // type all the edges and nodes
-  val typesAdd: Map[TypeSubj, Type] =
+  val typesAdd: Map[Name, Type] =
     createTypes(
       diag.adjacency.toSeq.flatMap{ (dom: Object, morphs: Set[(Morphism, Object)])
       => morphs.toSeq.map { (morph: Morphism, cod: Object) => (dom, cod, morph) }
@@ -132,7 +132,11 @@ private def translateDiagram(types: Map[TypeSubj, Type],
                 if types(name) != typesAdd(name)
                     then throw SemanticError(s"more than one type assigned to $name")
                 else None
-              else Some(Condition.TypeJudgement(name, typesAdd(name)))
+              else Some( Condition.TypeJudgement(typesAdd(name) match
+                case _: ObjectType => Object.Base(name)
+                case _: MorphismType => Morphism.Base(name)
+                case casted => throw SemanticError(s"unexpected error at Interpreter.scala, line 138"),
+                typesAdd(name)) )
     }. collect {
       case Some(x) => x
     }
@@ -150,14 +154,25 @@ private def translateDiagram(types: Map[TypeSubj, Type],
 
   ((conditionAdd ++ eqConditions).toSeq, types ++ typesAdd)
 
-private def translateExpression(types: Map[TypeSubj, Type],
-                        e: Expression): (Condition, Map[TypeSubj, Type]) =
+private def createTypeJudge(types: Map[Name, Type], subj: (Object | Morphism),
+                    typ: logic.parsing.Type): (TypeJudgement, Map[Name, Type]) =
+  val (translatedType, newTypes) = translateType(types, typ)
+  (subj, translatedType) match
+    case (_: Object, _: ObjectType) | (_: Morphism, _: MorphismType)
+      => (Condition.TypeJudgement(subj, translatedType), types)
+    case _ => throw SemanticError(s"$subj can't be of type $translatedType")
 
-  def createTypeJudge(types: Map[TypeSubj, Type],
-                      subj: TypeSubj, typ: logic.parsing.Type) =
-    val (translatedType, newTypes) = translateType(types, typ)
-    val judge: TypeJudgement = Condition.TypeJudgement(subj, translatedType)
-    (judge, extendTypes(newTypes, judge))
+private def createTypeJudge(types: Map[Name, Type], subj: Name,
+                    typ: logic.parsing.Type): (TypeJudgement, Map[Name, Type]) =
+  val (translatedType, newTypes) = translateType(types, typ)
+  val construct: Object | Morphism = translatedType match
+    case _: ObjectType => Object.Base(subj)
+    case _: MorphismType => Morphism.Base(subj)
+    case casted => throw SemanticError(s"a type can't be assigned to $casted")
+  (Condition.TypeJudgement(construct, translatedType), extendTypes(types, subj, translatedType))
+
+private def translateExpression(types: Map[Name, Type],
+                        e: Expression): (Condition, Map[Name, Type]) =
 
   e match
     case logic.parsing.Expression.Equation(left, right)
@@ -175,20 +190,15 @@ private def translateExpression(types: Map[TypeSubj, Type],
               createTypeJudge(types, x, typ)
             case _ => throw SemanticError("a category cannot have an assigned type")
 
-private def extendTypes(types: Map[TypeSubj, Type],
-                        judge: TypeJudgement): Map[TypeSubj, Type] =
-  val TypeJudgement(name, ttype) = judge
-  extendTypes(types, name, ttype)
-
-private def extendTypes(types: Map[TypeSubj, Type],
-                        name: TypeSubj, ttype: Type): Map[TypeSubj, Type] =
+private def extendTypes(types: Map[Name, Type],
+                        name: Name, ttype: Type): Map[Name, Type] =
   types.get(name) match
     case Some(other) => if other != ttype
       then throw SemanticError(s"more than one type assigned to $name")
       else types
     case _ => types + (name -> ttype)
 
-private def translateConcatenation(types: Map[TypeSubj, Type],
+private def translateConcatenation(types: Map[Name, Type],
                            c: Concatenation): logic.derivation.semantics.Construction =
   c.constructions match
     case Nil => throw IllegalArgumentException("Parser error: a concatenation of zero elements was parsed")
@@ -199,7 +209,7 @@ private def translateConcatenation(types: Map[TypeSubj, Type],
         case b => throw SemanticError(s"$b is expected to be a morphism but isn't")
     })
 
-private def translateConstruction(types: Map[TypeSubj, Type],
+private def translateConstruction(types: Map[Name, Type],
                           c: logic.parsing.Construction): logic.derivation.semantics.Construction =
   c match
     case Atomic(name) => translateNameBound(name) match
@@ -220,8 +230,8 @@ private def translateConstruction(types: Map[TypeSubj, Type],
       case casted: Object => Morphism.Identity(casted)
       case _ => throw SemanticError(s"the identity of $obj is undefined as it's not an object")
 
-private def translateType(types: Map[TypeSubj, Type], t: logic.parsing.Type):
-    (logic.derivation.semantics.Type, Map[TypeSubj, Type]) =
+private def translateType(types: Map[Name, Type], t: logic.parsing.Type):
+    (logic.derivation.semantics.Type, Map[Name, Type]) =
   t match
     case Cat(cat) => translateNameBound(cat) match
       case NameCapsule(casted) => (ObjectType.Cat(Category.Base(casted)),
@@ -247,12 +257,12 @@ private def translateNameBound(n: NameBound): TranslateCapsule =
     case NameBound.Base(name) => NameCapsule(name)
     // TODO: extend
 
-def translateProofStep(types: Map[TypeSubj, Type],
+def translateProofStep(types: Map[Name, Type],
                        p: (Positive, logic.parsing.ProofStep)): (Positive, ProofStep) =
   val (pos, logic.parsing.ProofStep(rule, post, map)) = p
   (pos, ProofStep(rule, post, translateMap(types, map)))
   
-private def translateMap(types: Map[TypeSubj, Type],
+private def translateMap(types: Map[Name, Type],
                          map: Seq[(Name, Concatenation)]): Map[Name, logic.derivation.semantics.Construction] =
   map match
     case (name, conc) :: tail => 
@@ -261,3 +271,5 @@ private def translateMap(types: Map[TypeSubj, Type],
       tMap.get(name) match
         case Some(value) if value != cons => throw SemanticError("invalid substitution specified")
         case _ => tMap + (name -> cons)
+
+//def normalizeContext
