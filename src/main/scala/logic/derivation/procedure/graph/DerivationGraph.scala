@@ -19,7 +19,7 @@ class DerivationGraph private(
 
   def extend(step: (Positive, ProofStep)): DerivationGraph =
     val (stepLine, ProofStep(rule, attach, subst)) = step
-    val ruleResult: RuleResult = translate(rule)
+    val ruleResult = RuleResult(rule, subst)
     if !objectives.contains(attach) then
       throw DerivationError(s"${attach._1}-${attach._2} is not a goal at line $stepLine")
 

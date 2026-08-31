@@ -10,6 +10,7 @@ import logic.parsing.Formula.*
 import logic.parsing.Type.*
 import logic.derivation.semantics.*
 import TranslateCapsule.*
+import logic.derivation.semantics.Morphism.{Identity, X}
 import utils.{Name, Positive}
 
 import scala.annotation.tailrec
