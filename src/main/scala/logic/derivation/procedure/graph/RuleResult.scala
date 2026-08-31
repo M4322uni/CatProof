@@ -64,7 +64,6 @@ object RuleResult:
     subj match
       case casted: Object => substObject(casted, subst)
       case casted: Morphism => substMorphism(casted, subst)
-      case _ => subj
 
   private def substType(ttype: Type, subst: Map[Name, Construction]): Type =
     ttype match
