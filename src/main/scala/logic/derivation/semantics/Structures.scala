@@ -11,7 +11,7 @@ enum Category:
 
 enum Morphism:
   case Base(name: Name)
-  case Concatenation(seq: Seq[Morphism])
+  case Concatenation(seq: List[Morphism])
   case Identity(obj: Object)
   case Parameter(name: Name)
 

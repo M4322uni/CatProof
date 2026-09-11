@@ -20,18 +20,18 @@ class SemanticError(message: String)
 
 def translateAssList(map: Map[Name, Diagram],
                      types: Map[Name, Type],
-                     s: Seq[Formula]): (Seq[Condition], Map[Name, Type]) =
+                     s: List[Formula]): (List[Condition], Map[Name, Type]) =
   s match
     case h :: tail =>
       val (conds, type_res) = translateFormula(map, types, h)
       val (condsL, type_resL) = translateAssList(map, type_res, tail)
       (condsL ++ conds, type_resL)
-    case Nil => (Seq(), types)
+    case Nil => (Nil, types)
 
 
 def translateGoalList(map: Map[Name, Diagram],
                          types: Map[Name, Type],
-                         s: Seq[(Positive, Formula)]): (Map[Positive, Seq[Condition]], Map[Name, Type]) =
+                         s: List[(Positive, Formula)]): (Map[Positive, List[Condition]], Map[Name, Type]) =
   s match
     case (index, formula) :: tail =>
       val (conds, type_res) = translateFormula(map, types, formula)
@@ -41,7 +41,7 @@ def translateGoalList(map: Map[Name, Diagram],
 
 private def translateFormula(map: Map[Name, Diagram],
                      types: Map[Name, Type],
-                     f: Formula): (Seq[Condition], Map[Name, Type]) =
+                     f: Formula): (List[Condition], Map[Name, Type]) =
   f match
     case Include(diagram) =>
       val (conds, newTypes) = translateDiagram(types, map.get(diagram) match
@@ -51,12 +51,12 @@ private def translateFormula(map: Map[Name, Diagram],
       (conds, newTypes)
     case Expr(exp) =>
       val (cond, newTypes) = translateExpression(types, exp)
-      (Seq(cond), newTypes)
+      (List(cond), newTypes)
 
 private def translateDiagram(types: Map[Name, Type],
-                     diag: Diagram): (Seq[Condition], Map[Name, Type]) =
+                     diag: Diagram): (List[Condition], Map[Name, Type]) =
 
-  def createTypes(morphisms: Seq[(Object, Object, Morphism)]): Map[Name, Type] =
+  def createTypes(morphisms: List[(Object, Object, Morphism)]): Map[Name, Type] =
     morphisms match
       case (dom @ Object.Base(name1), cod @ Object.Base(name2), Morphism.Base(name3)) :: tail =>
         val res = createTypes(tail)
@@ -69,7 +69,7 @@ private def translateDiagram(types: Map[Name, Type],
   def diagramDFS(): (Set[Object], Map[Object, Map[Object, Set[Morphism]]]) =
 
     @tailrec
-    def linearVisit(front: Seq[Object], visited: Set[Object],
+    def linearVisit(front: List[Object], visited: Set[Object],
                     eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
       Map[Object, Map[Object, Set[Morphism]]]) =
         front match
@@ -85,7 +85,7 @@ private def translateDiagram(types: Map[Name, Type],
         if visited.contains(node) then (visited, eqs)
         else
           val (nVisited, nEqs) = linearVisit(diag.adjacency(node)
-            .toSeq
+            .toList
             .map(_._2),
             visited + node, eqs)
 
@@ -99,8 +99,8 @@ private def translateDiagram(types: Map[Name, Type],
               (cod2, morphSet2) <- nEqs(cod1)
               morph2 <- morphSet2
             } yield (cod2, Morphism.Concatenation(morph2 match
-              case Morphism.Concatenation(seq) => morph1 +: seq
-              case _ => Seq(morph1, morph2))))
+              case Morphism.Concatenation(seq) => morph1 :: seq
+              case _ => List(morph1, morph2))))
               .groupBy { _._1 }
               .map { (obj, map) => obj ->
                 map.map { (obj, morph) => morph }.toSet }.withDefaultValue(Set())
@@ -112,14 +112,14 @@ private def translateDiagram(types: Map[Name, Type],
 
           (nVisited, eqs + (node -> morphsMerge))
 
-    linearVisit(diag.adjacency.toSeq.map(_._1), Set(),
+    linearVisit(diag.adjacency.toList.map(_._1), Set(),
       Map().withDefaultValue(Map().withDefaultValue(Set())))
 
   // type all the edges and nodes
   val typesAdd: Map[Name, Type] =
     createTypes(
-      diag.adjacency.toSeq.flatMap{ (dom: Object, morphs: Set[(Morphism, Object)])
-      => morphs.toSeq.map { (morph: Morphism, cod: Object) => (dom, cod, morph) }
+      diag.adjacency.toList.flatMap{ (dom: Object, morphs: Set[(Morphism, Object)])
+      => morphs.toList.map { (morph: Morphism, cod: Object) => (dom, cod, morph) }
       }
     )
 
@@ -150,14 +150,14 @@ private def translateDiagram(types: Map[Name, Type],
     } yield Condition.Equation(Check(first, morph))
   ).toSet
 
-  ((conditionAdd ++ eqConditions).toSeq, types ++ typesAdd)
+  ((conditionAdd ++ eqConditions).toList, types ++ typesAdd)
 
 private def createTypeJudge(types: Map[Name, Type], subj: Object | Morphism,
                             typ: logic.parsing.Type): (TypeJudgement, Map[Name, Type]) =
   val (translatedType, newTypes) = translateType(types, typ)
   (subj, translatedType) match
     case (_: Object, _: ObjectType) | (_: Morphism, _: MorphismType)
-      => (Condition.TypeJudgement(subj, translatedType), types)
+      => (Condition.TypeJudgement(subj, translatedType), newTypes)
     case _ => throw SemanticError(s"$subj can't be of type $translatedType")
 
 private def createTypeJudge(types: Map[Name, Type], subj: Name,
@@ -167,7 +167,7 @@ private def createTypeJudge(types: Map[Name, Type], subj: Name,
     case _: ObjectType => Object.Base(subj)
     case _: MorphismType => Morphism.Base(subj)
     case casted => throw SemanticError(s"a type can't be assigned to $casted")
-  (Condition.TypeJudgement(construct, translatedType), extendTypes(types, subj, translatedType))
+  (Condition.TypeJudgement(construct, translatedType), extendTypes(newTypes, subj, translatedType))
 
 private def translateExpression(types: Map[Name, Type],
                         e: Expression): (Condition, Map[Name, Type]) =
@@ -180,7 +180,7 @@ private def translateExpression(types: Map[Name, Type],
     case logic.parsing.Expression.TypeJudgement(subj, typ)
       =>
       subj match
-        case Concatenation(Seq(Atomic(Base(name)))) =>
+        case Concatenation(List(Atomic(Base(name)))) =>
           createTypeJudge(types, name, typ)
         case _ =>
           translateConcatenation(types, subj) match
@@ -200,7 +200,7 @@ private def translateConcatenation(types: Map[Name, Type],
                            c: Concatenation): logic.derivation.semantics.Construction =
   c.constructions match
     case Nil => throw IllegalArgumentException("Parser error: a concatenation of zero elements was parsed")
-    case Seq(c) => translateConstruction(types, c)
+    case List(c) => translateConstruction(types, c)
     case seq => Morphism.Concatenation(seq.map {
       translateConstruction(types, _) match
         case casted: Morphism => casted
@@ -261,10 +261,11 @@ def translateProofStep(types: Map[Name, Type],
   (pos, ProofStep(rule, post, translateMap(types, map)))
   
 private def translateMap(types: Map[Name, Type],
-                         map: Seq[(Name, Concatenation)]): Map[Name, logic.derivation.semantics.Construction] =
+                         map: List[(Name, Concatenation)]): Map[Name, logic.derivation.semantics.Construction] =
   map match
+    case Nil => Map.empty
     case (name, conc) :: tail => 
-      val tMap = translateMap(types, map)
+      val tMap = translateMap(types, tail)
       val cons = translateConcatenation(types, conc)
       tMap.get(name) match
         case Some(value) if value != cons => throw SemanticError("invalid substitution specified")

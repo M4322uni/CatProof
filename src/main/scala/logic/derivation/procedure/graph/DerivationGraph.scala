@@ -15,16 +15,19 @@ class DerivationGraph private(
                              ):
 
   def solve(context: Seq[Condition]): Seq[GoalsTree] =
-  //    mainGoals.collect {
-  //      constructGraph match
-  //        case casted: GoalsGraph => ???
-  //    }
-    ???
+    val contextSet = context.toSet
+    mainGoals.flatMap {
+      (p: Positive, vect: Vector[Condition]) => vect.indices.map {
+        (i: Int) => constructGraph((p, i), contextSet)
+      }
+    }.collect {
+      case casted: GoalsTree => casted
+    }.toSeq
 
   private def constructGraph(goal: (Positive, Int), context: Set[Condition]): GoalsTree | Unit =
     attachments.get(goal) match
       case Some(p) => nodes(p) match
-        case RuleResult(Some(vect), _) => (0 to vect.size).map {
+        case RuleResult(Some(vect), _) => vect.indices.map {
           (i: Int) =>
             constructGraph((p, i), nodes(p) match
               case RuleResult(Some(vect), _) => context ++ vect(i)._1
@@ -51,10 +54,10 @@ class DerivationGraph private(
     objectives.get(attach) match
       case None => throw DerivationError(s"${attach._1}-${attach._2} is not a goal at line $stepLine")
       case Some(MAIN_GOAL) => mainGoals(attach._1) match
-        case vect if vect(attach._2) == ruleResult =>
+        case vect if vect(attach._2) == ruleResult.post =>
         case _ => throw DerivationError(s"the proof step at line $stepLine is invalid")
       case Some(SUBGOAL) => nodes(attach._1) match
-        case RuleResult(Some(vect), _) if vect(attach._2)._2 == ruleResult =>
+        case RuleResult(Some(vect), _) if vect(attach._2)._2 == ruleResult.post =>
         case _ => throw DerivationError(s"the proof step at line $stepLine is invalid")
     val nodes2 = nodes + (stepLine -> ruleResult)
     val attachments2 = attachments + (attach -> stepLine)

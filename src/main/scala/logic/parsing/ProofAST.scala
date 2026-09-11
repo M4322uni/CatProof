@@ -2,13 +2,13 @@ package logic.parsing
 
 import utils.*
 
-private[parsing] case class FakeTree(assumptions: Seq[Formula],
-                                     goals: Seq[(Int, Formula)],
-                                     proof: Seq[(Int, ProofStep)])
+private[parsing] case class FakeTree(assumptions: List[Formula],
+                                     goals: List[(Int, Formula)],
+                                     proof: List[(Int, ProofStep)])
 
-case class Tree(assumptions: Seq[Formula],
-                goals: Seq[(Positive, Formula)],
-                proof: Seq[(Positive, ProofStep)])
+case class Tree(assumptions: List[Formula],
+                goals: List[(Positive, Formula)],
+                proof: List[(Positive, ProofStep)])
 
 enum Formula:
   case Include(diagram: Name)
@@ -18,7 +18,7 @@ enum Expression:
   case Equation(left: Concatenation, right: Concatenation)
   case TypeJudgement(subj: Concatenation, typ: Type)
 
-case class Concatenation(constructions: Seq[Construction]):
+case class Concatenation(constructions: List[Construction]):
   require(constructions.nonEmpty)
 
 enum Construction:
@@ -34,6 +34,6 @@ enum Type:
 enum NameBound:
   case Base(name: Name)
 
-case class ProofStep(rule: Rule, post: (Positive, Int), subst: Seq[(Name, Concatenation)])
+case class ProofStep(rule: Rule, post: (Positive, Int), subst: List[(Name, Concatenation)])
 
 case class Rule(name: Name, args: Option[String])

@@ -11,7 +11,7 @@ type ProofResult = Set[Condition] | Tree | String //TODO
 class Proof(body: String, diagrams: Seq[Diagram]):
   
   def apply(): ProofResult =
-    def includes(formulas: Seq[(Positive, Formula) | Formula]): Map[Name, Diagram] =
+    def includes(formulas: Iterable[(Positive, Formula) | Formula]): Map[Name, Diagram] =
       
       def mapDiagram(name: Name): (Name, Diagram) =
         name -> (diagrams.find(_.name == name) match

@@ -18,9 +18,9 @@ class Parser(text: String):
     P(newBlank ~ IgnoreCase("assumptions:") ~ formulaStripped ~ newBlank ~
         IgnoreCase("goals:") ~ formula ~ newBlank ~
         IgnoreCase("proof:") ~ proof ~ blank ~ End)
-      .map { (ass: Seq[Formula],
-              goal: Seq[(Int, Formula)],
-              proof: Seq[(Int, ProofStep)])
+      .map { (ass: List[Formula],
+              goal: List[(Int, Formula)],
+              proof: List[(Int, ProofStep)])
         => FakeTree(ass, goal, proof) }
 
   private def newBlank[$ : P]: P[Unit] =
@@ -29,13 +29,13 @@ class Parser(text: String):
   private def blank[$ : P]: P[Unit] =
     P( CharsWhileIn("\t\n ", 0) )
     
-  private def formulaStripped[$ : P]: P[Seq[Formula]] =
+  private def formulaStripped[$ : P]: P[List[Formula]] =
     P( hard_indent ~ (include | expression.map { Expr.apply }) )
-      .repX
+      .repX.map(_.toList)
 
-  private def formula[$ : P]: P[Seq[(Int, Formula)]] =
+  private def formula[$ : P]: P[List[(Int, Formula)]] =
     P( hard_indent ~ Index ~ (include | expression.map{ Expr.apply }) )
-      .repX
+      .repX.map(_.toList)
 
   private def expression[$ : P]: P[Expression] =
     P( (concatenation ~ indent_blank ~ "=" ~ indent_blank ~ concatenation)
@@ -54,7 +54,8 @@ class Parser(text: String):
 
   private def concatenation[$ : P]: P[Concatenation] =
     P( construction ~ (indent_blank ~ ";" ~ indent_blank ~ construction).repX )
-      .map { (c: Construction, s: Seq[Construction]) => Concatenation(c +: s) }
+      // FastParse repetitions return Seq; convert before building the list-based AST.
+      .map { (c: Construction, s: Seq[Construction]) => Concatenation(c :: s.toList) }
 
   private def construction[$ : P]: P[Construction] =
     P( "dom(" ~ indent_blank ~ concatenation.map { Dom.apply } ~ indent_blank ~ ")"
@@ -86,21 +87,21 @@ class Parser(text: String):
     P( IgnoreCase("<include ") ~ name ~ ">" )
       .map { Include.apply }
 
-  private def proof[$ : P]: P[Seq[(Int, ProofStep)]] =
+  private def proof[$ : P]: P[List[(Int, ProofStep)]] =
     P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ 
       rule ~ space_indent ~ application ~ space_indent ~ subst).repX )
       .map { (str: Seq[(Int, Rule, (Positive, Option[Positive]), 
-        Seq[(Name, Concatenation)])]) =>
-        str.map { (arg: Int, rule: Rule, app: (Positive, Option[Positive]), 
-                   map: Seq[(Name, Concatenation)]) =>
+        List[(Name, Concatenation)])]) =>
+        str.toList.map { (arg: Int, rule: Rule, app: (Positive, Option[Positive]),
+                   map: List[(Name, Concatenation)]) =>
           app match
             case (p1, Some(p2)) => (arg, ProofStep(rule, (p1, p2-1), map))
             case (p, _) => (arg, ProofStep(rule, (p, 0), map))
         } }
     
-  private def subst[$ : P]: P[Seq[(Name, Concatenation)]] =
+  private def subst[$ : P]: P[List[(Name, Concatenation)]] =
     P( IgnoreCase("mapping") ~ space_indent ~ bind ~ ("," ~ space_indent ~ bind).repX )
-      .map { (n: Name, c: Concatenation, s: Seq[(Name, Concatenation)]) => (n, c) +: s }
+      .map { (n: Name, c: Concatenation, s: Seq[(Name, Concatenation)]) => (n, c) :: s.toList }
     
   private def bind[$ : P]: P[(Name, Concatenation)] =
     P( name ~ space_indent ~ "to" ~ space_indent ~ concatenation )
@@ -116,8 +117,8 @@ class Parser(text: String):
   private def application[$ : P]: P[(Positive, Option[Positive])] =
     P( IgnoreCase("for") ~ space_indent ~ line_couple )
 
-//  private def and[$ : P]: P[Seq[(Positive, Option[Positive])]] =
-//    P( ("," ~ space_indent ~ line_couple).repX )
+//  private def and[$ : P]: P[List[(Positive, Option[Positive])]] =
+//    P( ("," ~ space_indent ~ line_couple).repX ).map(_.toList)
 
   private def line_couple[$ : P]: P[(Positive, Option[Positive])] =
     P( line ~ ("-" ~ line).? )
@@ -130,23 +131,23 @@ class Parser(text: String):
     P( CharsWhileIn("\t ", 0) )
 
   private def fix(tree: FakeTree): Tree =
-    val FakeTree(assumption: Seq[Formula],
-      goals: Seq[(Int, Formula)],
-      proof: Seq[(Int, ProofStep)]) = tree
-    val (goals2: Seq[(Positive, Formula)],
+    val FakeTree(assumption: List[Formula],
+      goals: List[(Int, Formula)],
+      proof: List[(Int, ProofStep)]) = tree
+    val (goals2: List[(Positive, Formula)],
       lastIndex: Int,
       lastLine: Positive) = fix(goals)
-    val (proof2: Seq[(Positive, ProofStep)], _, _) = fix(proof, lastIndex, lastLine)
+    val (proof2: List[(Positive, ProofStep)], _, _) = fix(proof, lastIndex, lastLine)
     Tree(assumption, goals2, proof2)
 
-  private def fix[T](s: Seq[(Int, T)], lastIndex: Int = 0, 
-                     lastLine: Positive = 1): (Seq[(Positive, T)], Int, Positive) =
-    val strip: Seq[Int] = s.map { _._1 }
-    val seq: Seq[(Int, T)] =
-      (lastIndex +: strip ).zip(s).map {
+  private def fix[T](s: List[(Int, T)], lastIndex: Int = 0,
+                     lastLine: Positive = 1): (List[(Positive, T)], Int, Positive) =
+    val strip: List[Int] = s.map { _._1 }
+    val seq: List[(Int, T)] =
+      (lastIndex :: strip).zip(s).map {
       case (p1, (p2, f)) => (count(p2, p1), f)
     }
-    val sums: Seq[Positive] = seq.scanLeft(lastLine) {
+    val sums: List[Positive] = seq.scanLeft(lastLine) {
       case (p1: Positive, (p2: Int, _)) => p1+p2
     }.tail
     (seq.zip(sums).map {
