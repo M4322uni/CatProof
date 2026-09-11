@@ -13,7 +13,6 @@ import TranslateCapsule.*
 import utils.{Name, Positive}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.{AbstractSeq, LinearSeq}
 
 class SemanticError(message: String)
   extends IllegalArgumentException(s"Semantic error: $message")
