@@ -39,7 +39,7 @@ object View extends JFXApp3:
         structure.top = menu
         menu.alignment = Pos.CenterLeft
         menu.setPrefHeight(10)
-        private val button = new Button("Diao")
+        private val button = new Button("Ex")
         menu.children.add(button)
         button.style =
           """
@@ -48,7 +48,7 @@ object View extends JFXApp3:
           -fx-border-color: transparent;
           """
 
-        menu.children.add(new Button("Diao"))
+        menu.children.add(new Button("Ex"))
         structure.center = tabs
         structure.left = leftStructure
         leftStructure.center = TextInput
