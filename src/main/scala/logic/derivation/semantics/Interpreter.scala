@@ -10,7 +10,6 @@ import logic.parsing.Formula.*
 import logic.parsing.Type.*
 import logic.derivation.semantics.*
 import TranslateCapsule.*
-import logic.derivation.semantics.Morphism.Identity
 import utils.{Name, Positive}
 
 import scala.annotation.tailrec
@@ -154,8 +153,8 @@ private def translateDiagram(types: Map[Name, Type],
 
   ((conditionAdd ++ eqConditions).toSeq, types ++ typesAdd)
 
-private def createTypeJudge(types: Map[Name, Type], subj: (Object | Morphism),
-                    typ: logic.parsing.Type): (TypeJudgement, Map[Name, Type]) =
+private def createTypeJudge(types: Map[Name, Type], subj: Object | Morphism,
+                            typ: logic.parsing.Type): (TypeJudgement, Map[Name, Type]) =
   val (translatedType, newTypes) = translateType(types, typ)
   (subj, translatedType) match
     case (_: Object, _: ObjectType) | (_: Morphism, _: MorphismType)
