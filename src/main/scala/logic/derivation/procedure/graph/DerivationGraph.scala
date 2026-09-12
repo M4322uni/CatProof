@@ -25,28 +25,47 @@ class DerivationGraph private(
     }.toSeq
 
   private def constructGraph(goal: (Positive, Int), context: Set[Condition]): GoalsTree | Unit =
+    val (line, idx) = goal
+
+    def getIdx(got: Option[RuleResult]): Option[Int] =
+      got match
+        case Some(RuleResult(Some(vect), _)) => if vect.size > 1
+          then Some(idx) else None
+        case None => if mainGoals(goal._1).size > 1
+          then Some(idx) else None
+        case _ => None
+
     attachments.get(goal) match
       case Some(p) => nodes(p) match
         case RuleResult(Some(vect), _) => vect.indices.map {
           (i: Int) =>
-            constructGraph((p, i), nodes(p) match
-              case RuleResult(Some(vect), _) => context ++ vect(i)._1
-              case RuleResult(None, _) => throw DerivationError("a derivation tree was created" +
-                "with an invalid starting point"))
+            constructGraph((p, i), context ++ vect(i)._1)
         }.collect {
           case casted: GoalsTree => casted
         } match
           case seq if seq.isEmpty => ()
-          case seq => Fork(nodes(goal._1) match
-            case RuleResult(Some(vect), _) => vect(goal._2)
-            case RuleResult(None, _) => throw DerivationError("a derivation tree was created" +
-              "with an invalid starting point"), seq)
+          case seq =>
+            val got = nodes.get(goal._1)
+            Fork(line, getIdx(got), got match
+              case Some(RuleResult(Some(vect), _)) =>
+                val (_, post) = vect(goal._2)
+                (context, post)
+              case Some(RuleResult(None, _)) => throw DerivationError("a derivation tree was created" +
+                "with an invalid starting point")
+              case _ => (context, mainGoals(goal._1)(goal._2)), seq)
         case RuleResult(None, post) => if context.contains(post)
           then () else throw DerivationError(s"wrong derivation for $goal")// check
-      case None => Leaf(nodes(goal._1) match
-        case RuleResult(Some(vect), _) => vect(goal._2)
-        case RuleResult(None, _) => throw DerivationError("a derivation tree was created" +
-          "with an invalid starting point"))
+      case None =>
+        val got = nodes.get(goal._1)
+        Leaf(line, getIdx(got), got match
+          case Some(RuleResult(Some(vect), _)) =>
+            val (_, post) = vect(goal._2)
+            (context, post)
+          case Some(RuleResult(None, _)) => throw DerivationError("a derivation tree was created" +
+            "with an invalid starting point")
+          case _ => (context, mainGoals(goal._1)(goal._2)))
+
+
 
   def extend(step: (Positive, ProofStep)): DerivationGraph =
     val (stepLine, ProofStep(rule, attach, subst)) = step
