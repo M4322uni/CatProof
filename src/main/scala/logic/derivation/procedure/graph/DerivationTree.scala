@@ -1,13 +1,13 @@
 package logic.derivation.procedure.graph
 
-import logic.derivation.procedure.graph.DerivationGraph.GoalType
-import logic.derivation.procedure.graph.DerivationGraph.GoalType.*
+import logic.derivation.procedure.graph.DerivationTree.GoalType
+import logic.derivation.procedure.graph.DerivationTree.GoalType.*
 import logic.derivation.procedure.graph.GoalsTree.{Fork, Leaf}
 import logic.derivation.procedure.{Condition, DerivationError}
 import logic.derivation.semantics.ProofStep
 import utils.Positive
 
-class DerivationGraph private(
+class DerivationTree private(
                                mainGoals: Map[Positive, Vector[Condition]],
                                nodes: Map[Positive, RuleResult],
                                attachments: Map[(Positive, Int), Positive],
@@ -65,9 +65,7 @@ class DerivationGraph private(
             "with an invalid starting point")
           case _ => (context, mainGoals(goal._1)(goal._2)))
 
-
-
-  def extend(step: (Positive, ProofStep)): DerivationGraph =
+  def extend(step: (Positive, ProofStep)): DerivationTree =
     val (stepLine, ProofStep(rule, attach, subst)) = step
     val ruleResult = RuleResult(rule, subst)
     objectives.get(attach) match
@@ -83,9 +81,9 @@ class DerivationGraph private(
     val objectives2 = (objectives - attach) ++ ( 0 until (ruleResult.pre match
       case Some(vect) => vect.size
       case _ => 0) ).map { (stepLine, _) -> SUBGOAL }.toMap
-    DerivationGraph(mainGoals, nodes2, attachments2, objectives2)
+    DerivationTree(mainGoals, nodes2, attachments2, objectives2)
   
-object DerivationGraph:
+object DerivationTree:
 
   enum GoalType:
     case MAIN_GOAL
@@ -97,9 +95,9 @@ object DerivationGraph:
   private def apply(mainGoals: Map[Positive, Vector[Condition]],
                     nodes: Map[Positive, RuleResult],
                     attachments: Map[(Positive, Int), Positive],
-                    objectives: Map[(Positive, Int), GoalType]): DerivationGraph =
-    new DerivationGraph(mainGoals, nodes, attachments, objectives)
+                    objectives: Map[(Positive, Int), GoalType]): DerivationTree =
+    new DerivationTree(mainGoals, nodes, attachments, objectives)
 
-  def apply(goalsMap: Map[Positive, Vector[Condition]]): DerivationGraph =
-    DerivationGraph(goalsMap, Map(), Map(), goalsMap.keys.flatMap {
+  def apply(goalsMap: Map[Positive, Vector[Condition]]): DerivationTree =
+    DerivationTree(goalsMap, Map(), Map(), goalsMap.keys.flatMap {
       line => goalsMap(line).indices.map{ (line, _) -> MAIN_GOAL } }.toMap)

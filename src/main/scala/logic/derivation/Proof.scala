@@ -1,16 +1,14 @@
 package logic.derivation
 
-import logic.derivation.procedure.{Condition, createProof}
+import logic.derivation.procedure.graph.{DerivationTree, GoalsTree}
 import logic.parsing.*
 import logic.parsing.Formula.Include
 import logic.derivation.semantics.*
 import utils.*
 
-type ProofResult = Set[Condition] | Tree | String //TODO
-
 class Proof(body: String, diagrams: Seq[Diagram]):
   
-  def apply(): ProofResult =
+  def apply(): String =
     def includes(formulas: Iterable[(Positive, Formula) | Formula]): Map[Name, Diagram] =
       
       def mapDiagram(name: Name): (Name, Diagram) =
@@ -34,7 +32,12 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     // run
 //    val result: ProofResult = createProof(context, goalsMap, proof)
 //    result
-    context.toSet
+    val startingTree = DerivationTree(goalsMap)
+    val finalTree = steps.foldLeft(startingTree) { (graph, step) => graph.extend(step) }
+    val objectives = finalTree.solve(context)
+    objectives match
+      case seq if seq.isEmpty => "QED"
+      case _ => objectives.reverse.mkString("\n---\n")
     
 object Proof:
   

@@ -30,18 +30,21 @@ def translateAssList(map: Map[Name, Diagram],
 
 
 def translateGoalList(map: Map[Name, Diagram],
-                         types: Map[Name, Type],
-                         s: List[(Positive, Formula)]): (Map[Positive, List[Condition]], Map[Name, Type]) =
+                      types: Map[Name, Type],
+                      s: List[(Positive, Formula)],
+                      process: Set[Condition] = Set()): (Map[Positive, Vector[Condition]], Map[Name, Type]) =
   s match
     case (index, formula) :: tail =>
       val (conds, type_res) = translateFormula(map, types, formula)
-      val (condsL, type_resL) = translateGoalList(map, type_res, tail)
-      (condsL + (index -> conds), type_resL)
+      val (condsL, type_resL) = translateGoalList(map, type_res, tail, process ++ conds)
+      (conds.diff(process) match
+        case remain if remain.nonEmpty => condsL + (index -> remain.toVector)
+        case _ => condsL, type_resL)
     case Nil => (Map(), types)
 
 private def translateFormula(map: Map[Name, Diagram],
                      types: Map[Name, Type],
-                     f: Formula): (List[Condition], Map[Name, Type]) =
+                     f: Formula): (Set[Condition], Map[Name, Type]) =
   f match
     case Include(diagram) =>
       val (conds, newTypes) = translateDiagram(types, map.get(diagram) match
@@ -51,10 +54,10 @@ private def translateFormula(map: Map[Name, Diagram],
       (conds, newTypes)
     case Expr(exp) =>
       val (cond, newTypes) = translateExpression(types, exp)
-      (List(cond), newTypes)
+      (Set(cond), newTypes)
 
 private def translateDiagram(types: Map[Name, Type],
-                     diag: Diagram): (List[Condition], Map[Name, Type]) =
+                     diag: Diagram): (Set[Condition], Map[Name, Type]) =
 
   def createTypes(morphisms: List[(Object, Object, Morphism)]): Map[Name, Type] =
     morphisms match
@@ -150,7 +153,7 @@ private def translateDiagram(types: Map[Name, Type],
     } yield Condition.Equation(Check(first, morph))
   ).toSet
 
-  ((conditionAdd ++ eqConditions).toList, types ++ typesAdd)
+  (conditionAdd ++ eqConditions, types ++ typesAdd)
 
 private def createTypeJudge(types: Map[Name, Type], subj: Object | Morphism,
                             typ: logic.parsing.Type): (TypeJudgement, Map[Name, Type]) =
