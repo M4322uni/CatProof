@@ -206,9 +206,24 @@ object RuleResult:
         Object.Parameter("B")
       ))
     ),
-//    "associativity" -> RuleResult(
-//      
-//    )
+    "associativity" -> RuleResult(true,
+      Equation(ECheck(
+        Concatenation(
+          Concatenation(
+            Morphism.Parameter("f"),
+            Morphism.Parameter("g")
+          ),
+          Morphism.Parameter("h")
+        ),
+        Concatenation(
+          Morphism.Parameter("f"),
+          Concatenation(
+            Morphism.Parameter("g"),
+            Morphism.Parameter("h")
+          )
+        )
+      ))
+    )
   )
 
   private val ruleTranslation2: Map[String, String => RuleResult] = Map(
