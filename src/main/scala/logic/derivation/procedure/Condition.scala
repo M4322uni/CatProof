@@ -11,6 +11,11 @@ enum Condition:
   case Equation(p: Check)
   case TypeJudgement(subj: TypeSubj, ttype: Type)
 
+  override def toString: String =
+    this match
+      case Equation(Check(lhs, rhs)) => s"$lhs = $rhs"
+      case TypeJudgement(subj, ttype) => s"$subj: $ttype"
+
 case class Check(lhs: Construction, rhs: Construction):
   (lhs, rhs) match
     case (_: Category, _: Category)

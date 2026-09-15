@@ -18,8 +18,9 @@ enum Expression:
   case Equation(left: Concatenation, right: Concatenation)
   case TypeJudgement(subj: Concatenation, typ: Type)
 
-case class Concatenation(constructions: List[Construction]):
-  require(constructions.nonEmpty)
+enum Concatenation:
+  case Binary(lhs: Concatenation, rhs: Concatenation)
+  case Leaf(con: Construction)
 
 enum Construction:
   case Atomic(name: NameBound)

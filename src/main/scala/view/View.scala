@@ -39,16 +39,23 @@ object View extends JFXApp3:
         structure.top = menu
         menu.alignment = Pos.CenterLeft
         menu.setPrefHeight(10)
-        private val button = new Button("Ex")
-        menu.children.add(button)
-        button.style =
+        private val file = new Button("File")
+        menu.children.add(file)
+        file.style =
+          """
+          -fx-background-color: transparent;
+          -fx-background-radius: 4;
+          -fx-border-color: transparent;
+          """
+        private val sheet = new Button("Sheet")
+        menu.children.add(sheet)
+        sheet.style =
           """
           -fx-background-color: transparent;
           -fx-background-radius: 4;
           -fx-border-color: transparent;
           """
 
-        menu.children.add(new Button("Ex"))
         structure.center = tabs
         structure.left = leftStructure
         leftStructure.center = TextInput

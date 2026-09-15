@@ -4,6 +4,7 @@ import fastparse.*
 import NoWhitespace.*
 import logic.parsing.NameBound.*
 import logic.parsing.Construction.*
+import logic.parsing.Concatenation.*
 import logic.parsing.Expression.*
 import logic.parsing.Formula.*
 import logic.parsing.Type.*
@@ -52,10 +53,18 @@ class Parser(text: String):
         case Some((c1: Concatenation, c2: Concatenation)) => HomSet(cat, c1, c2)
         case _ => Cat(cat)}
 
+  private def disambiguate[$ : P]: P[Concatenation] =
+    P( "(" ~ indent_blank ~ concatenation ~ indent_blank ~ ")" | construction ).map {
+      case casted: Construction => Leaf(casted)
+      case casted: Concatenation => casted
+    }
+
   private def concatenation[$ : P]: P[Concatenation] =
-    P( construction ~ (indent_blank ~ ";" ~ indent_blank ~ construction).repX )
-      // FastParse repetitions return Seq; convert before building the list-based AST.
-      .map { (c: Construction, s: Seq[Construction]) => Concatenation(c :: s.toList) }
+    P( disambiguate ~ indent_blank ~ ";" ~ indent_blank ~ disambiguate | construction )
+      .map {
+        case (lhs: Concatenation, rhs: Concatenation) => Binary(lhs, rhs)
+        case casted: Construction => Leaf(casted)
+      }
 
   private def construction[$ : P]: P[Construction] =
     P( "dom(" ~ indent_blank ~ concatenation.map { Dom.apply } ~ indent_blank ~ ")"
@@ -104,7 +113,7 @@ class Parser(text: String):
       .map { (n: Name, c: Concatenation, s: Seq[(Name, Concatenation)]) => (n, c) :: s.toList }
     
   private def bind[$ : P]: P[(Name, Concatenation)] =
-    P( name ~ space_indent ~ "to" ~ space_indent ~ concatenation )
+    P( name ~ space_indent ~ IgnoreCase("to") ~ space_indent ~ concatenation )
 
   private def rule[$ : P]: P[Rule] =
     P( name ~ ("(" ~ escapePar ~ ")").? )

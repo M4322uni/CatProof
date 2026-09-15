@@ -10,6 +10,7 @@ import logic.parsing.Formula.*
 import logic.parsing.Type.*
 import logic.derivation.semantics.*
 import TranslateCapsule.*
+import logic.parsing.Concatenation.*
 import utils.{Name, Positive}
 
 import scala.annotation.tailrec
@@ -101,9 +102,7 @@ private def translateDiagram(types: Map[Name, Type],
               morph1 <- morphSet
               (cod2, morphSet2) <- nEqs(cod1)
               morph2 <- morphSet2
-            } yield (cod2, Morphism.Concatenation(morph2 match
-              case Morphism.Concatenation(seq) => morph1 :: seq
-              case _ => List(morph1, morph2))))
+            } yield (cod2, Morphism.Concatenation(morph1, morph2)))
               .groupBy { _._1 }
               .map { (obj, map) => obj ->
                 map.map { (obj, morph) => morph }.toSet }.withDefaultValue(Set())
@@ -153,7 +152,11 @@ private def translateDiagram(types: Map[Name, Type],
     } yield Condition.Equation(Check(first, morph))
   ).toSet
 
-  (conditionAdd ++ eqConditions, types ++ typesAdd)
+  val newTypes = diag.cat match
+    case Category.Base(name) => extendTypes(types ++ typesAdd, name, CategoryType.-)
+    case _ => throw SemanticError("diagram definition can't rely on a parametric category")
+
+  (conditionAdd ++ eqConditions, newTypes)
 
 private def createTypeJudge(types: Map[Name, Type], subj: Object | Morphism,
                             typ: logic.parsing.Type): (TypeJudgement, Map[Name, Type]) =
@@ -183,7 +186,7 @@ private def translateExpression(types: Map[Name, Type],
     case logic.parsing.Expression.TypeJudgement(subj, typ)
       =>
       subj match
-        case Concatenation(List(Atomic(Base(name)))) =>
+        case Leaf(Atomic(Base(name))) =>
           createTypeJudge(types, name, typ)
         case _ =>
           translateConcatenation(types, subj) match
@@ -201,14 +204,15 @@ private def extendTypes(types: Map[Name, Type],
 
 private def translateConcatenation(types: Map[Name, Type],
                            c: Concatenation): logic.derivation.semantics.Construction =
-  c.constructions match
-    case Nil => throw IllegalArgumentException("Parser error: a concatenation of zero elements was parsed")
-    case List(c) => translateConstruction(types, c)
-    case seq => Morphism.Concatenation(seq.map {
-      translateConstruction(types, _) match
+  c match
+    case Binary(lhs, rhs) => Morphism.Concatenation(
+      translateConcatenation(types, lhs) match
         case casted: Morphism => casted
-        case b => throw SemanticError(s"$b is expected to be a morphism but isn't")
-    })
+        case els => throw SemanticError(s"$els is expected to be a morphism but isn't"), 
+      translateConcatenation(types, rhs) match
+        case casted: Morphism => casted
+        case els => throw SemanticError(s"$els is expected to be a morphism but isn't"))
+    case Leaf(const) => translateConstruction(types, const)
 
 private def translateConstruction(types: Map[Name, Type],
                           c: logic.parsing.Construction): logic.derivation.semantics.Construction =

@@ -19,7 +19,18 @@ object RuleResult:
     extends IllegalArgumentException(s"Substitution error: $msg")
 
   private val ruleTranslation1: Map[String, RuleResult] = Map(
-
+    "identity" -> RuleResult(Some(Vector(
+      (Set(),
+        TypeJudgement(Object.Parameter("A"),
+          Cat(Parameter("C")))))),
+      TypeJudgement(Morphism.Identity(Object.Parameter("A")),
+        MorphismType.HomSet(Parameter("C"),
+          Object.Parameter("A"), Object.Parameter("A")))
+    ),
+    "object_typing" -> RuleResult(None,
+      TypeJudgement(Object.Parameter("A"),
+        Cat(Parameter("C")))
+    )
   )
 
   private val ruleTranslation2: Map[String, String => RuleResult] = Map(
@@ -91,7 +102,8 @@ object RuleResult:
   private def substMorphism(morphism: Morphism, subst: Map[Name, Construction]): Morphism =
     morphism match
       case Morphism.Base(name) => Morphism.Base(name)
-      case Concatenation(seq) => Concatenation(seq.map { substMorphism(_, subst) })
+      case Concatenation(lhs, rhs) => Concatenation(substMorphism(lhs, subst),
+        substMorphism(rhs, subst))
       case Identity(obj) => Identity(substObject(obj, subst))
       case Morphism.Parameter(name) => subst.get(name) match
         case Some(value: Morphism) => value
