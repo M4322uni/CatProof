@@ -18,7 +18,6 @@ import scala.annotation.tailrec
 class SemanticError(message: String)
   extends IllegalArgumentException(s"Semantic error: $message")
 
-
 def translateAssList(map: Map[Name, Diagram],
                      types: Map[Name, Type],
                      s: List[Formula]): (List[Condition], Map[Name, Type]) =
@@ -133,10 +132,9 @@ private def translateDiagram(types: Map[Name, Type],
                     then throw SemanticError(s"more than one type assigned to $name")
                 else None
               else Some( Condition.TypeJudgement(typesAdd(name) match
-                case _: ObjectType => Object.Base(name)
-                case _: MorphismType => Morphism.Base(name)
-                case casted => throw SemanticError(s"unexpected error at Interpreter.scala, line 138"),
-                typesAdd(name)) )
+                case casted: ObjectType => TCheck(Object.Base(name), casted)
+                case casted: MorphismType => TCheck(Morphism.Base(name), casted)
+                case casted => throw SemanticError(s"unexpected error at Interpreter.scala, line 138")))
     }. collect {
       case Some(x) => x
     }
@@ -149,7 +147,7 @@ private def translateDiagram(types: Map[Name, Type],
       (_, set) <- point
       first: Morphism <- set.headOption
       morph: Morphism <- set.tail
-    } yield Condition.Equation(Check(first, morph))
+    } yield Condition.Equation(ECheck(first, morph))
   ).toSet
 
   val newTypes = diag.cat match
@@ -161,26 +159,28 @@ private def translateDiagram(types: Map[Name, Type],
 private def createTypeJudge(types: Map[Name, Type], subj: Object | Morphism,
                             typ: logic.parsing.Type): (TypeJudgement, Map[Name, Type]) =
   val (translatedType, newTypes) = translateType(types, typ)
-  (subj, translatedType) match
-    case (_: Object, _: ObjectType) | (_: Morphism, _: MorphismType)
-      => (Condition.TypeJudgement(subj, translatedType), newTypes)
-    case _ => throw SemanticError(s"$subj can't be of type $translatedType")
+  ((subj, translatedType) match
+    case (obj: Object, typ: ObjectType) 
+      => Condition.TypeJudgement(TCheck(obj, typ))
+    case (morph: Morphism, typ: MorphismType)
+      => Condition.TypeJudgement(TCheck(morph, typ))
+    case _ => throw SemanticError(s"$subj can't be of type $translatedType"), newTypes)
 
 private def createTypeJudge(types: Map[Name, Type], subj: Name,
                     typ: logic.parsing.Type): (TypeJudgement, Map[Name, Type]) =
   val (translatedType, newTypes) = translateType(types, typ)
-  val construct: Object | Morphism = translatedType match
-    case _: ObjectType => Object.Base(subj)
-    case _: MorphismType => Morphism.Base(subj)
+  val construct: TypeJudgement = translatedType match
+    case casted: ObjectType => TypeJudgement(TCheck(Object.Base(subj), casted))
+    case casted: MorphismType => TypeJudgement(TCheck(Morphism.Base(subj), casted))
     case casted => throw SemanticError(s"a type can't be assigned to $casted")
-  (Condition.TypeJudgement(construct, translatedType), extendTypes(newTypes, subj, translatedType))
+  (construct, extendTypes(newTypes, subj, translatedType))
 
 private def translateExpression(types: Map[Name, Type],
                         e: Expression): (Condition, Map[Name, Type]) =
 
   e match
     case logic.parsing.Expression.Equation(left, right)
-      => (Condition.Equation(Check(
+      => (Condition.Equation(ECheck(
         translateConcatenation(types, left),
         translateConcatenation(types, right))), types)
     case logic.parsing.Expression.TypeJudgement(subj, typ)

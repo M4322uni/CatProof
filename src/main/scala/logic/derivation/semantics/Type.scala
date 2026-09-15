@@ -1,6 +1,8 @@
 package logic.derivation.semantics
 
-type Type = MorphismType | ObjectType | CategoryType
+type Type = RestrictType | CategoryType
+
+type RestrictType = MorphismType | ObjectType
 
 enum MorphismType:
   case HomSet(cat: Category, dom: Object, cod: Object)

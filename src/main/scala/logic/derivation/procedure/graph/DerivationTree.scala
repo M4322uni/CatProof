@@ -29,7 +29,8 @@ class DerivationTree private(
 
     def getIdx(got: Option[RuleResult]): Option[Int] =
       got match
-        case Some(RuleResult(Some(vect), _)) => if vect.size > 1
+        case Some(RuleResult(vect: Vector[(Set[Condition], Condition)], 
+          _)) => if vect.size > 1
           then Some(idx) else None
         case None => if mainGoals(goal._1).size > 1
           then Some(idx) else None
@@ -37,7 +38,8 @@ class DerivationTree private(
 
     attachments.get(goal) match
       case Some(p) => nodes(p) match
-        case RuleResult(Some(vect), _) => vect.indices.map {
+        case RuleResult(vect: Vector[(Set[Condition], Condition)], 
+          _) => vect.indices.map {
           (i: Int) =>
             constructGraph((p, i), context ++ vect(i)._1)
         }.collect {
@@ -47,21 +49,21 @@ class DerivationTree private(
           case seq =>
             val got = nodes.get(goal._1)
             Fork(line, getIdx(got), got match
-              case Some(RuleResult(Some(vect), _)) =>
+              case Some(RuleResult(vect: Vector[(Set[Condition], Condition)], _)) =>
                 val (_, post) = vect(goal._2)
                 (context, post)
-              case Some(RuleResult(None, _)) => throw DerivationError("a derivation tree was created" +
+              case Some(RuleResult(_, _)) => throw DerivationError("a derivation tree was created" +
                 "with an invalid starting point")
               case _ => (context, mainGoals(goal._1)(goal._2)), seq)
-        case RuleResult(None, post) => if context.contains(post)
+        case RuleResult(cond: Boolean, post) => if cond || context.contains(post)
           then () else throw DerivationError(s"wrong derivation for $goal")// check
       case None =>
         val got = nodes.get(goal._1)
         Leaf(line, getIdx(got), got match
-          case Some(RuleResult(Some(vect), _)) =>
+          case Some(RuleResult(vect: Vector[(Set[Condition], Condition)], _)) =>
             val (_, post) = vect(goal._2)
             (context, post)
-          case Some(RuleResult(None, _)) => throw DerivationError("a derivation tree was created" +
+          case Some(RuleResult(_, _)) => throw DerivationError("a derivation tree was created" +
             "with an invalid starting point")
           case _ => (context, mainGoals(goal._1)(goal._2)))
 
@@ -74,12 +76,13 @@ class DerivationTree private(
         case vect if vect(attach._2) == ruleResult.post =>
         case _ => throw DerivationError(s"the proof step at line $stepLine is invalid")
       case Some(SUBGOAL) => nodes(attach._1) match
-        case RuleResult(Some(vect), _) if vect(attach._2)._2 == ruleResult.post =>
+        case RuleResult(vect: Vector[(Set[Condition], Condition)], 
+          _) if vect(attach._2)._2 == ruleResult.post =>
         case _ => throw DerivationError(s"the proof step at line $stepLine is invalid")
     val nodes2 = nodes + (stepLine -> ruleResult)
     val attachments2 = attachments + (attach -> stepLine)
     val objectives2 = (objectives - attach) ++ ( 0 until (ruleResult.pre match
-      case Some(vect) => vect.size
+      case vect: Vector[(Set[Condition], Condition)] => vect.size
       case _ => 0) ).map { (stepLine, _) -> SUBGOAL }.toMap
     DerivationTree(mainGoals, nodes2, attachments2, objectives2)
   

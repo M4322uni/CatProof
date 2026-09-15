@@ -1,17 +1,17 @@
 package logic.derivation.procedure.graph
 
 import logic.derivation.procedure.Condition.{Equation, TypeJudgement}
-import logic.derivation.procedure.{Check, Condition, DerivationError, TypeSubj}
+import logic.derivation.procedure.{Condition, DerivationError, ECheck, TCheck, TypeSubj}
 import logic.derivation.semantics.Category.*
 import logic.derivation.semantics.Morphism.{Concatenation, Identity}
-import logic.derivation.semantics.{Category, CategoryType, Construction, Morphism, MorphismType, Object, ObjectType, Type}
+import logic.derivation.semantics.{Category, CategoryType, Construction, Morphism, MorphismType, Object, ObjectType, RestrictType, Type}
 import logic.derivation.semantics.ObjectType.*
 import logic.derivation.semantics.MorphismType.*
 import logic.derivation.semantics.Object.{Codomain, Domain}
 import logic.parsing.Rule
 import utils.Name
 
-case class RuleResult(pre: Option[Vector[(Set[Condition], Condition)]], post: Condition)
+case class RuleResult(pre: Vector[(Set[Condition], Condition)] | Boolean, post: Condition)
 
 object RuleResult:
 
@@ -19,18 +19,196 @@ object RuleResult:
     extends IllegalArgumentException(s"Substitution error: $msg")
 
   private val ruleTranslation1: Map[String, RuleResult] = Map(
-    "identity" -> RuleResult(Some(Vector(
+    "identity" -> RuleResult(Vector(
       (Set(),
-        TypeJudgement(Object.Parameter("A"),
-          Cat(Parameter("C")))))),
-      TypeJudgement(Morphism.Identity(Object.Parameter("A")),
-        MorphismType.HomSet(Parameter("C"),
-          Object.Parameter("A"), Object.Parameter("A")))
+        TypeJudgement(TCheck(
+          Object.Parameter("A"),
+          Cat(Parameter("Cat")))))
     ),
-    "object_typing" -> RuleResult(None,
-      TypeJudgement(Object.Parameter("A"),
-        Cat(Parameter("C")))
-    )
+      TypeJudgement(TCheck(
+        Morphism.Identity(Object.Parameter("A")),
+        MorphismType.HomSet(Parameter("Cat"),
+          Object.Parameter("A"), Object.Parameter("A"))))
+    ),
+    "object_typing" -> RuleResult(false,
+      TypeJudgement(TCheck(
+        Object.Parameter("A"),
+        Cat(Parameter("Cat"))))
+    ),
+    "morphism_typing" -> RuleResult(false,
+      TypeJudgement(TCheck(
+        Morphism.Parameter("A"),
+        Cat(Parameter("Cat"))))
+    ),
+    "concatenation_typing" -> RuleResult(Vector(
+      (Set(),
+        TypeJudgement(TCheck(
+          Object.Parameter("A"),
+          Cat(Parameter("Cat"))))
+      ),
+      (Set(),
+        TypeJudgement(TCheck(
+          Object.Parameter("B"),
+          Cat(Parameter("Cat"))))
+      ),
+      (Set(),
+        TypeJudgement(TCheck(
+          Object.Parameter("C"),
+          Cat(Parameter("Cat"))))
+      ),
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("f"),
+          HomSet(Parameter("Cat"),
+            Object.Parameter("A"),
+            Object.Parameter("B"))))
+      ),
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("g"),
+          HomSet(Parameter("Cat"),
+            Object.Parameter("B"),
+            Object.Parameter("C"))))
+      ),
+    ),
+      TypeJudgement(TCheck(
+        Morphism.Concatenation(
+        Morphism.Parameter("f"),
+        Morphism.Parameter("g")
+      ),
+        HomSet(Parameter("Cat"),
+          Object.Parameter("A"),
+          Object.Parameter("C")))
+      )
+    ),
+    "left_identity_law" -> RuleResult(Vector(
+      (Set(),
+        TypeJudgement(TCheck(
+          Object.Parameter("A"),
+          Cat(Parameter("Cat"))))
+      ),
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("f"),
+          HomSet(Parameter("Cat"),
+            Object.Parameter("A"),
+            Object.Parameter("B"))))
+      )
+    ),
+      Equation(ECheck(
+        Morphism.Concatenation(
+          Identity(Object.Parameter("A")),
+          Morphism.Parameter("f")
+        ),
+        Morphism.Parameter("f")
+      ))
+    ),
+    "right_identity_law" -> RuleResult(Vector(
+      (Set(),
+        TypeJudgement(TCheck(
+          Object.Parameter("A"),
+          Cat(Parameter("Cat"))))
+      ),
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("f"),
+          HomSet(Parameter("Cat"),
+            Object.Parameter("B"),
+            Object.Parameter("A"))))
+      )
+    ),
+      Equation(ECheck(
+        Morphism.Concatenation(
+          Morphism.Parameter("f"),
+          Identity(Object.Parameter("A"))
+        ),
+        Morphism.Parameter("f")
+      ))
+    ),
+    "object_identity" -> RuleResult(Vector(
+      (Set(),
+        TypeJudgement(TCheck(
+          Object.Parameter("A"),
+          Cat(Parameter("Cat")))
+        )
+      )
+    ),
+      Equation(ECheck(
+        Object.Parameter("A"),
+        Object.Parameter("A")
+      ))
+    ),
+    "morphism_identity" -> RuleResult(Vector(
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("A"),
+          Cat(Parameter("Cat")))
+        )
+      )
+    ),
+      Equation(ECheck(
+        Object.Parameter("A"),
+        Object.Parameter("A")
+      ))
+    ),
+    "concatenation_equality" -> RuleResult(Vector(
+      (Set(),
+        Equation(ECheck(
+          Morphism.Parameter("f"),
+          Morphism.Parameter("h")
+        ))
+      ),
+      (Set(),
+        Equation(ECheck(
+          Morphism.Parameter("g"),
+          Morphism.Parameter("i")
+        ))
+      )
+    ),
+      Equation(ECheck(
+        Morphism.Concatenation(
+          Morphism.Parameter("f"),
+          Morphism.Parameter("g")
+        ),
+        Morphism.Concatenation(
+          Morphism.Parameter("h"),
+          Morphism.Parameter("i")
+        )
+      ))
+    ),
+    "domain_definition" -> RuleResult(Vector(
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("f"),
+          HomSet(Parameter("Cat"),
+            Object.Parameter("A"),
+            Object.Parameter("B"))
+        ))
+      )
+    ),
+      Equation(ECheck(
+        Object.Domain(Morphism.Parameter("f")),
+        Object.Parameter("A")
+      ))
+    ),
+    "codomain_definition" -> RuleResult(Vector(
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("f"),
+          HomSet(Parameter("Cat"),
+            Object.Parameter("A"),
+            Object.Parameter("B"))
+        ))
+      )
+    ),
+      Equation(ECheck(
+        Object.Domain(Morphism.Parameter("f")),
+        Object.Parameter("B")
+      ))
+    ),
+//    "associativity" -> RuleResult(
+//      
+//    )
   )
 
   private val ruleTranslation2: Map[String, String => RuleResult] = Map(
@@ -51,19 +229,19 @@ object RuleResult:
 
   private def subst(ruleResult: RuleResult, subst: Map[Name, Construction]): RuleResult =
     val RuleResult(pre, post) = ruleResult
-    val pre2: Option[Vector[(Set[Condition], Condition)]] = pre match
-      case Some(vect) => Some( vect.map {
+    val pre2: Vector[(Set[Condition], Condition)] | Boolean = pre match
+      case vect: Vector[(Set[Condition], Condition)] => vect.map {
         (s: Set[Condition], c: Condition) => (s.map { substCondition(_, subst) }, substCondition(c, subst))
-      } )
-      case None => None
+      }
+      case els: Boolean => els
     RuleResult(pre2, substCondition(post, subst))
 
   private def substCondition(condition: Condition, subst: Map[Name, Construction]): Condition =
     condition match
-      case Equation(Check(lhs, rhs)) =>
-        Equation(Check(substConstruction(lhs, subst), substConstruction(rhs, subst)))
-      case TypeJudgement(subj, ttype) =>
-        TypeJudgement(substTypeSubj(subj, subst), substType(ttype, subst))
+      case Equation(ECheck(lhs, rhs)) =>
+        Equation(ECheck(substConstruction(lhs, subst), substConstruction(rhs, subst)))
+      case TypeJudgement(TCheck(subj, ttype)) =>
+        TypeJudgement(TCheck(substTypeSubj(subj, subst), substRestrictType(ttype, subst)))
 
   private def substConstruction(construction: Construction, subst: Map[Name, Construction]): Construction =
     construction match
@@ -76,11 +254,10 @@ object RuleResult:
       case casted: Object => substObject(casted, subst)
       case casted: Morphism => substMorphism(casted, subst)
 
-  private def substType(ttype: Type, subst: Map[Name, Construction]): Type =
+  private def substRestrictType(ttype: RestrictType, subst: Map[Name, Construction]): RestrictType =
     ttype match
       case casted: ObjectType => substObjectType(casted, subst)
       case casted: MorphismType => substMorphismType(casted, subst)
-      case _: CategoryType => CategoryType.-
 
   private def substObjectType(ot: ObjectType, subst: Map[Name, Construction]): ObjectType =
     ot match
