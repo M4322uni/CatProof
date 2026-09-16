@@ -3,7 +3,7 @@ package view
 import scalafx.Includes.*
 import org.fxmisc.richtext.CodeArea
 import org.fxmisc.richtext.LineNumberFactory
-import View.{WINDOW_HEIGTH, WINDOW_WIDTH}
+import View.{LEFT_PANE_WIDTH_RATIO, WINDOW_HEIGTH, WINDOW_WIDTH}
 import logic.derivation.Proof
 import org.fxmisc.flowless.VirtualizedScrollPane
 import scalafx.scene.input.{KeyCode, KeyEvent}
@@ -12,7 +12,7 @@ import view.diagram.DiagramView.DiagramTab
 
 object TextInput extends VirtualizedScrollPane(
     new CodeArea("ASSUMPTIONS:\nGOALS:\nPROOF:"):
-      setPrefWidth(WINDOW_WIDTH / 3.0)
+      setPrefWidth(WINDOW_WIDTH * LEFT_PANE_WIDTH_RATIO)
       setPrefHeight(WINDOW_HEIGTH * (2 / 3.0))
       setParagraphGraphicFactory(LineNumberFactory.get(this))
       setStyle(
@@ -35,6 +35,6 @@ object TextInput extends VirtualizedScrollPane(
         tab => DiagramView.bindings(tab)
       }.collect {
         case diag: DiagramTab => diag.logicTranslate()
-      }.toSeq)().toString) // TODO
+      }.toSeq)()) // TODO
     catch
       case f: IllegalArgumentException => Terminal.display(f.getMessage, true)

@@ -6,7 +6,7 @@ import scalafx.application.JFXApp3
 import scalafx.application.JFXApp3.PrimaryStage
 import scalafx.geometry.Pos
 import scalafx.scene.Scene
-import scalafx.scene.control.Button
+import scalafx.scene.control.{Button, SplitPane}
 import scalafx.scene.image.Image
 import scalafx.scene.layout.{BorderPane, HBox}
 import scalafx.util.Duration
@@ -16,6 +16,7 @@ object View extends JFXApp3:
 
   val WINDOW_WIDTH: Int = 900
   val WINDOW_HEIGTH: Int = 600
+  val LEFT_PANE_WIDTH_RATIO: Double = 1.0 / 3.0
 
   override def start(): Unit =
     stage = new PrimaryStage:
@@ -56,9 +57,10 @@ object View extends JFXApp3:
           -fx-border-color: transparent;
           """
 
-        structure.center = tabs
-        structure.left = leftStructure
         leftStructure.center = TextInput
         leftStructure.bottom = Terminal
 
-
+        private val split = new SplitPane:
+          items ++= Seq(leftStructure, tabs)
+          setDividerPosition(0, LEFT_PANE_WIDTH_RATIO)
+        structure.center = split

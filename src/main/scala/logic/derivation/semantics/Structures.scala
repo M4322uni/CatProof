@@ -1,10 +1,22 @@
 package logic.derivation.semantics
 
+import logic.derivation.procedure.Condition
 import logic.derivation.semantics.Morphism.capsule
 import logic.parsing.Rule
 import utils.{Name, Positive}
 
-type Construction = Category | Morphism | Object
+enum Construction:
+  case Cat(cat: Category)
+  case Morph(morph: Morphism)
+  case Obj(obj: Object)
+  case Parameter(name: Name)
+
+  override def toString: String =
+    this match
+      case Cat(cat) => s"$cat"
+      case Morph(morph) => s"$morph"
+      case Obj(obj) => s"$obj"
+      case Parameter(name) => name
 
 enum Category:
   case Base(name: Name)
@@ -48,4 +60,4 @@ enum Object:
       case Codomain(morph) => s"Cod($morph)"
       case Parameter(name) => name
 
-case class ProofStep(rule: Rule, post: (Positive, Int), map: Map[Name, Construction])
+case class ProofStep(rule: Rule, post: (Positive, Int), map: Map[Name, Condition | Construction])

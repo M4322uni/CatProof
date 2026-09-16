@@ -2,7 +2,7 @@ package view
 
 import scalafx.Includes.*
 import scalafx.scene.control.TextArea
-import View.{WINDOW_HEIGTH, WINDOW_WIDTH}
+import View.{LEFT_PANE_WIDTH_RATIO, WINDOW_HEIGTH, WINDOW_WIDTH}
 
 object Terminal extends TextArea:
 
@@ -13,7 +13,7 @@ object Terminal extends TextArea:
 //    -fx-focus-color: -fx-box-border;
 //    -fx-faint-focus-color: transparent;
 //  """
-  prefWidth = WINDOW_WIDTH / 3.0
+  prefWidth = WINDOW_WIDTH * LEFT_PANE_WIDTH_RATIO
   prefHeight = WINDOW_HEIGTH / 3.0
 
   def display(text: String, error: Boolean = false): Unit =

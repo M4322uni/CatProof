@@ -2,6 +2,7 @@ package logic.derivation.procedure
 
 import utils.Name
 import logic.derivation.semantics.*
+import logic.derivation.semantics.Construction.*
 
 //TODO: tidy up
 
@@ -10,17 +11,21 @@ type TypeSubj = Object | Morphism
 enum Condition:
   case Equation(p: ECheck)
   case TypeJudgement(p: TCheck)
+  case Parameter(name: Name)
 
   override def toString: String =
     this match
       case Equation(ECheck(lhs, rhs)) => s"$lhs = $rhs"
       case TypeJudgement(TCheck(subj, ttype)) => s"$subj: $ttype"
+      case Parameter(name) => name
 
 case class ECheck(lhs: Construction, rhs: Construction):
   (lhs, rhs) match
-    case (_: Category, _: Category)
-         | (_: Morphism, _: Morphism)
-         | (_: Object, _: Object) =>
+    case (Cat(_), Cat(_))
+         | (Morph(_), Morph(_))
+         | (Obj(_), Obj(_))
+         | (Parameter(_), _)
+         | (_, Parameter(_)) =>
     case _ => throw SemanticError(s"$lhs and $rhs are not of the same type")
 
 case class TCheck(lhs: TypeSubj, rhs: RestrictType):

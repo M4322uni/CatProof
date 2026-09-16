@@ -100,20 +100,21 @@ class Parser(text: String):
     P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ 
       rule ~ space_indent ~ application ~ space_indent ~ subst).repX )
       .map { (str: Seq[(Int, Rule, (Positive, Option[Positive]), 
-        List[(Name, Concatenation)])]) =>
+        List[(Name, Expression | Concatenation)])]) =>
         str.toList.map { (arg: Int, rule: Rule, app: (Positive, Option[Positive]),
-                   map: List[(Name, Concatenation)]) =>
+                   map: List[(Name, Expression | Concatenation)]) =>
           app match
             case (p1, Some(p2)) => (arg, ProofStep(rule, (p1, p2-1), map))
             case (p, _) => (arg, ProofStep(rule, (p, 0), map))
         } }
     
-  private def subst[$ : P]: P[List[(Name, Concatenation)]] =
+  private def subst[$ : P]: P[List[(Name, Expression | Concatenation)]] =
     P( IgnoreCase("mapping") ~ space_indent ~ bind ~ ("," ~ space_indent ~ bind).repX )
-      .map { (n: Name, c: Concatenation, s: Seq[(Name, Concatenation)]) => (n, c) :: s.toList }
+      .map { (n: Name, c: Expression | Concatenation, s: Seq[(Name, Expression | Concatenation)]) 
+      => (n, c) :: s.toList }
     
-  private def bind[$ : P]: P[(Name, Concatenation)] =
-    P( name ~ space_indent ~ IgnoreCase("to") ~ space_indent ~ concatenation )
+  private def bind[$ : P]: P[(Name, Expression | Concatenation)] =
+    P( name ~ space_indent ~ IgnoreCase("to") ~ space_indent ~ (expression | concatenation) )
 
   private def rule[$ : P]: P[Rule] =
     P( name ~ ("(" ~ escapePar ~ ")").? )

@@ -2,7 +2,7 @@ package view.diagram
 
 import scalafx.Includes.*
 import scalafx.scene.control.{Tab, TabPane}
-import view.View.{WINDOW_HEIGTH, WINDOW_WIDTH}
+import view.View.{LEFT_PANE_WIDTH_RATIO, WINDOW_HEIGTH, WINDOW_WIDTH}
 import view.diagram.drawables.nodes.Node
 import view.diagram.drawables.{Arrow, Drawable}
 import logic.derivation.*
@@ -66,6 +66,5 @@ object DiagramView extends TabPane:
       case _ =>
   }
 
-  prefWidth = WINDOW_WIDTH * (2 / 3.0)
+  prefWidth = WINDOW_WIDTH * (1.0 - LEFT_PANE_WIDTH_RATIO)
   prefHeight = WINDOW_HEIGTH
-

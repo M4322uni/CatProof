@@ -8,6 +8,7 @@ import logic.derivation.semantics.{Category, CategoryType, Construction, Morphis
 import logic.derivation.semantics.ObjectType.*
 import logic.derivation.semantics.MorphismType.*
 import logic.derivation.semantics.Object.{Codomain, Domain}
+import logic.derivation.semantics.Construction.{Morph, Obj}
 import logic.parsing.Rule
 import utils.Name
 
@@ -15,7 +16,7 @@ case class RuleResult(pre: Vector[(Set[Condition], Condition)] | Boolean, post: 
 
 object RuleResult:
 
-  class SubstitutionError(msg: String)
+  private class SubstitutionError(msg: String)
     extends IllegalArgumentException(s"Substitution error: $msg")
 
   private val ruleTranslation1: Map[String, RuleResult] = Map(
@@ -30,17 +31,8 @@ object RuleResult:
         MorphismType.HomSet(Parameter("Cat"),
           Object.Parameter("A"), Object.Parameter("A"))))
     ),
-    "object_typing" -> RuleResult(false,
-      TypeJudgement(TCheck(
-        Object.Parameter("A"),
-        Cat(Parameter("Cat"))))
-    ),
-    "morphism_typing" -> RuleResult(false,
-      TypeJudgement(TCheck(
-        Morphism.Parameter("f"),
-        HomSet(Parameter("Cat"),
-          Object.Parameter("A"),
-          Object.Parameter("B"))))
+    "given" -> RuleResult(false,
+      Condition.Parameter("A")
     ),
     "concatenation_typing" -> RuleResult(Vector(
       (Set(),
@@ -98,11 +90,11 @@ object RuleResult:
       )
     ),
       Equation(ECheck(
-        Morphism.Concatenation(
+        Morph(Morphism.Concatenation(
           Identity(Object.Parameter("A")),
-          Morphism.Parameter("f")
+          Morphism.Parameter("f"))
         ),
-        Morphism.Parameter("f")
+        Morph(Morphism.Parameter("f"))
       ))
     ),
     "right_identity_law" -> RuleResult(Vector(
@@ -120,64 +112,36 @@ object RuleResult:
       )
     ),
       Equation(ECheck(
-        Morphism.Concatenation(
+        Morph(Morphism.Concatenation(
           Morphism.Parameter("f"),
-          Identity(Object.Parameter("A"))
+          Identity(Object.Parameter("A")))
         ),
-        Morphism.Parameter("f")
-      ))
-    ),
-    "object_identity" -> RuleResult(Vector(
-      (Set(),
-        TypeJudgement(TCheck(
-          Object.Parameter("A"),
-          Cat(Parameter("Cat")))
-        )
-      )
-    ),
-      Equation(ECheck(
-        Object.Parameter("A"),
-        Object.Parameter("A")
-      ))
-    ),
-    "morphism_identity" -> RuleResult(Vector(
-      (Set(),
-        TypeJudgement(TCheck(
-          Morphism.Parameter("f"),
-          HomSet(Parameter("Cat"),
-            Object.Parameter("A"),
-            Object.Parameter("B")))
-        )
-      )
-    ),
-      Equation(ECheck(
-        Morphism.Parameter("f"),
-        Morphism.Parameter("f")
+        Morph(Morphism.Parameter("f"))
       ))
     ),
     "concatenation_equality" -> RuleResult(Vector(
       (Set(),
         Equation(ECheck(
-          Morphism.Parameter("f"),
-          Morphism.Parameter("h")
+          Morph(Morphism.Parameter("f")),
+          Morph(Morphism.Parameter("h"))
         ))
       ),
       (Set(),
         Equation(ECheck(
-          Morphism.Parameter("g"),
-          Morphism.Parameter("i")
+          Morph(Morphism.Parameter("g")),
+          Morph(Morphism.Parameter("i"))
         ))
       )
     ),
       Equation(ECheck(
-        Morphism.Concatenation(
+        Morph(Morphism.Concatenation(
           Morphism.Parameter("f"),
           Morphism.Parameter("g")
-        ),
-        Morphism.Concatenation(
+        )),
+        Morph(Morphism.Concatenation(
           Morphism.Parameter("h"),
           Morphism.Parameter("i")
-        )
+        ))
       ))
     ),
     "domain_definition" -> RuleResult(Vector(
@@ -191,8 +155,8 @@ object RuleResult:
       )
     ),
       Equation(ECheck(
-        Object.Domain(Morphism.Parameter("f")),
-        Object.Parameter("A")
+        Obj(Object.Domain(Morphism.Parameter("f"))),
+        Obj(Object.Parameter("A"))
       ))
     ),
     "codomain_definition" -> RuleResult(Vector(
@@ -206,26 +170,62 @@ object RuleResult:
       )
     ),
       Equation(ECheck(
-        Object.Codomain(Morphism.Parameter("f")),
-        Object.Parameter("B")
+        Obj(Object.Codomain(Morphism.Parameter("f"))),
+        Obj(Object.Parameter("B"))
       ))
     ),
     "associativity" -> RuleResult(true,
       Equation(ECheck(
-        Concatenation(
+        Morph(Concatenation(
           Concatenation(
             Morphism.Parameter("f"),
             Morphism.Parameter("g")
           ),
           Morphism.Parameter("h")
-        ),
-        Concatenation(
+        )),
+        Morph(Concatenation(
           Morphism.Parameter("f"),
           Concatenation(
             Morphism.Parameter("g"),
             Morphism.Parameter("h")
           )
-        )
+        ))
+      ))
+    ),
+    "equality_identity" -> RuleResult(true,
+      Equation(ECheck(
+        Construction.Parameter("A"),
+        Construction.Parameter("A")
+      ))
+    ),
+    "equality_simmetry" -> RuleResult(Vector(
+      (Set(),
+        Equation(ECheck(
+          Construction.Parameter("A"),
+          Construction.Parameter("B")
+        ))
+      )),
+      Equation(ECheck(
+        Construction.Parameter("B"),
+        Construction.Parameter("A")
+      ))
+    ),
+    "equality_transitivity" -> RuleResult(Vector(
+      (Set(),
+        Equation(ECheck(
+          Construction.Parameter("A"),
+          Construction.Parameter("B")
+        ))
+      ),
+      (Set(),
+        Equation(ECheck(
+          Construction.Parameter("B"),
+          Construction.Parameter("C")
+        ))
+      )),
+      Equation(ECheck(
+        Construction.Parameter("A"),
+        Construction.Parameter("C")
       ))
     )
   )
@@ -234,7 +234,7 @@ object RuleResult:
 
   )
 
-  def apply(rule: Rule, map: Map[Name, Construction]): RuleResult =
+  def apply(rule: Rule, map: Map[Name, Construction | Condition]): RuleResult =
     subst(translate(rule), map)
 
   private def translate(rule: Rule): RuleResult =
@@ -246,7 +246,7 @@ object RuleResult:
         case Some(ruleResult) => ruleResult
         case _ => throw DerivationError(s"a \"$name\" rule is not yet implemented")
 
-  private def subst(ruleResult: RuleResult, subst: Map[Name, Construction]): RuleResult =
+  private def subst(ruleResult: RuleResult, subst: Map[Name, Construction | Condition]): RuleResult =
     val RuleResult(pre, post) = ruleResult
     val pre2: Vector[(Set[Condition], Condition)] | Boolean = pre match
       case vect: Vector[(Set[Condition], Condition)] => vect.map {
@@ -255,63 +255,71 @@ object RuleResult:
       case els: Boolean => els
     RuleResult(pre2, substCondition(post, subst))
 
-  private def substCondition(condition: Condition, subst: Map[Name, Construction]): Condition =
+  private def substCondition(condition: Condition, subst: Map[Name, Construction | Condition]): Condition =
     condition match
       case Equation(ECheck(lhs, rhs)) =>
         Equation(ECheck(substConstruction(lhs, subst), substConstruction(rhs, subst)))
       case TypeJudgement(TCheck(subj, ttype)) =>
         TypeJudgement(TCheck(substTypeSubj(subj, subst), substRestrictType(ttype, subst)))
+      case Condition.Parameter(name) => subst.get(name) match
+        case Some(cons: Condition) => cons
+        case None => throw SubstitutionError(s"no mapping found for parameter $name")
+        case _ => throw SubstitutionError(s"the value mapped to $name is not of the correct type")
 
-  private def substConstruction(construction: Construction, subst: Map[Name, Construction]): Construction =
+  private def substConstruction(construction: Construction, subst: Map[Name, Construction | Condition]): Construction =
     construction match
-      case casted: Object => substObject(casted, subst)
-      case casted: Morphism => substMorphism(casted, subst)
-      case casted: Category => substCategory(casted, subst)
+      case Obj(casted) => Obj(substObject(casted, subst))
+      case Morph(casted) => Morph(substMorphism(casted, subst))
+      case Construction.Cat(casted) => Construction.Cat(substCategory(casted, subst))
+      case Construction.Parameter(name) => subst.get(name) match
+        case Some(cons: Construction) => cons
+        case None => throw SubstitutionError(s"no mapping found for parameter $name")
+        case _ => throw SubstitutionError(s"the value mapped to $name is not of the correct type")
 
-  private def substTypeSubj(subj: TypeSubj, subst: Map[Name, Construction]): TypeSubj =
+  private def substTypeSubj(subj: TypeSubj, subst: Map[Name, Construction | Condition]): TypeSubj =
     subj match
       case casted: Object => substObject(casted, subst)
       case casted: Morphism => substMorphism(casted, subst)
 
-  private def substRestrictType(ttype: RestrictType, subst: Map[Name, Construction]): RestrictType =
+  private def substRestrictType(ttype: RestrictType, subst: Map[Name, Construction | Condition]): RestrictType =
     ttype match
       case casted: ObjectType => substObjectType(casted, subst)
       case casted: MorphismType => substMorphismType(casted, subst)
 
-  private def substObjectType(ot: ObjectType, subst: Map[Name, Construction]): ObjectType =
+  private def substObjectType(ot: ObjectType, subst: Map[Name, Construction | Condition]): ObjectType =
     ot match
       case Cat(cat) => Cat(substCategory(cat, subst))
 
-  private def substMorphismType(mt: MorphismType, subst: Map[Name, Construction]): MorphismType =
+  private def substMorphismType(mt: MorphismType, subst: Map[Name, Construction | Condition]): MorphismType =
     mt match
       case HomSet(cat, dom, cod) => HomSet(substCategory(cat, subst),
         substObject(dom, subst), substObject(cod, subst))
 
-  private def substCategory(category: Category, subst: Map[Name, Construction]): Category =
+  private def substCategory(category: Category, subst: Map[Name, Construction | Condition]): Category =
     category match
       case Base(name) => Base(name)
       case Parameter(name) => subst.get(name) match
-        case Some(value: Category) => value
+        case Some(Construction.Cat(value)) => value
         case None => throw SubstitutionError(s"no mapping found for parameter $name")
         case _ => throw SubstitutionError(s"the value mapped to $name is not of the correct type")
 
-  private def substMorphism(morphism: Morphism, subst: Map[Name, Construction]): Morphism =
+  private def substMorphism(morphism: Morphism, subst: Map[Name, Construction | Condition]): Morphism =
     morphism match
       case Morphism.Base(name) => Morphism.Base(name)
       case Concatenation(lhs, rhs) => Concatenation(substMorphism(lhs, subst),
         substMorphism(rhs, subst))
       case Identity(obj) => Identity(substObject(obj, subst))
       case Morphism.Parameter(name) => subst.get(name) match
-        case Some(value: Morphism) => value
+        case Some(Morph(value)) => value
         case None => throw SubstitutionError(s"no mapping found for parameter $name")
         case _ => throw SubstitutionError(s"the value mapped to $name is not of the correct type")
 
-  private def substObject(obj: Object, subst: Map[Name, Construction]): Object =
+  private def substObject(obj: Object, subst: Map[Name, Construction | Condition]): Object =
     obj match
       case Object.Base(name) => Object.Base(name)
       case Domain(morph) => Domain(substMorphism(morph, subst))
       case Codomain(morph) => Codomain(substMorphism(morph, subst))
       case Object.Parameter(name) => subst.get(name) match
-        case Some(value: Object) => value
+        case Some(Obj(value)) => value
         case None => throw SubstitutionError(s"no mapping found for parameter $name")
         case _ => throw SubstitutionError(s"the value mapped to $name is not of the correct type")

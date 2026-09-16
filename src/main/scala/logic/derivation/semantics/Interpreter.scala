@@ -10,6 +10,7 @@ import logic.parsing.Formula.*
 import logic.parsing.Type.*
 import logic.derivation.semantics.*
 import TranslateCapsule.*
+import logic.derivation.semantics.Construction.{Morph, Obj}
 import logic.parsing.Concatenation.*
 import utils.{Name, Positive}
 
@@ -147,7 +148,7 @@ private def translateDiagram(types: Map[Name, Type],
       (_, set) <- point
       first: Morphism <- set.headOption
       morph: Morphism <- set.tail
-    } yield Condition.Equation(ECheck(first, morph))
+    } yield Condition.Equation(ECheck(Morph(first), Morph(morph)))
   ).toSet
 
   val newTypes = diag.cat match
@@ -190,8 +191,8 @@ private def translateExpression(types: Map[Name, Type],
           createTypeJudge(types, name, typ)
         case _ =>
           translateConcatenation(types, subj) match
-            case x: (Object | Morphism) =>
-              createTypeJudge(types, x, typ)
+            case Obj(x) => createTypeJudge(types, x, typ)
+            case Morph(x) => createTypeJudge(types, x, typ)
             case _ => throw SemanticError("a category cannot have an assigned type")
 
 private def extendTypes(types: Map[Name, Type],
@@ -205,34 +206,34 @@ private def extendTypes(types: Map[Name, Type],
 private def translateConcatenation(types: Map[Name, Type],
                            c: Concatenation): logic.derivation.semantics.Construction =
   c match
-    case Binary(lhs, rhs) => Morphism.Concatenation(
+    case Binary(lhs, rhs) => Morph(Morphism.Concatenation(
       translateConcatenation(types, lhs) match
-        case casted: Morphism => casted
+        case Morph(casted) => casted
         case els => throw SemanticError(s"$els is expected to be a morphism but isn't"), 
       translateConcatenation(types, rhs) match
-        case casted: Morphism => casted
-        case els => throw SemanticError(s"$els is expected to be a morphism but isn't"))
+        case Morph(casted) => casted
+        case els => throw SemanticError(s"$els is expected to be a morphism but isn't")))
     case Leaf(const) => translateConstruction(types, const)
 
 private def translateConstruction(types: Map[Name, Type],
                           c: logic.parsing.Construction): logic.derivation.semantics.Construction =
   c match
     case Atomic(name) => translateNameBound(name) match
-      case CategoryCapsule(casted) => casted
+      case CategoryCapsule(casted) => logic.derivation.semantics.Construction.Cat(casted)
       case NameCapsule(casted) => types.get(casted) match
         case Some(value) => value match
-          case _ : MorphismType => Morphism.Base(casted)
-          case _ : ObjectType => Object.Base(casted)
-          case _ : CategoryType => Category.Base(casted)
+          case _ : MorphismType => Morph(Morphism.Base(casted))
+          case _ : ObjectType => Obj(Object.Base(casted))
+          case _ : CategoryType => logic.derivation.semantics.Construction.Cat(Category.Base(casted))
         case _ => throw SemanticError(s"the type of $name is not defined before use")
     case Dom(morph) => translateConcatenation(types, morph) match
-      case casted: Morphism => Object.Domain(casted)
+      case Morph(casted) => Obj(Object.Domain(casted))
       case _ => throw SemanticError(s"the domain of $morph is undefined as it's not a morphism")
     case Cod(morph) => translateConcatenation(types, morph) match
-      case casted: Morphism => Object.Codomain(casted)
+      case Morph(casted) => Obj(Object.Codomain(casted))
       case _ => throw SemanticError(s"the codomain of $morph is undefined as it's not a morphism")
     case Id(obj) => translateConstruction(types, obj) match
-      case casted: Object => Morphism.Identity(casted)
+      case Obj(casted) => Morph(Morphism.Identity(casted))
       case _ => throw SemanticError(s"the identity of $obj is undefined as it's not an object")
 
 private def translateType(types: Map[Name, Type], t: logic.parsing.Type):
@@ -245,10 +246,10 @@ private def translateType(types: Map[Name, Type], t: logic.parsing.Type):
     case HomSet(cat, dom, cod) => translateNameBound(cat) match
       case NameCapsule(casted) => (MorphismType.HomSet(Category.Base(casted),
         translateConcatenation(types, dom) match
-          case casted: Object => casted
+          case Obj(casted) => casted
           case _ => throw SemanticError("a homset is defines only between two objects"),
         translateConcatenation(types, cod) match
-          case casted: Object => casted
+          case Obj(casted) => casted
           case _ => throw SemanticError("a homset is defines only between two objects")),
         extendTypes(types, casted, CategoryType.-))
       case CategoryCapsule(casted) => (ObjectType.Cat(casted), types)
@@ -268,14 +269,17 @@ def translateProofStep(types: Map[Name, Type],
   (pos, ProofStep(rule, post, translateMap(types, map)))
   
 private def translateMap(types: Map[Name, Type],
-                         map: List[(Name, Concatenation)]): Map[Name, logic.derivation.semantics.Construction] =
+                         map: List[(Name, Expression | Concatenation)]): Map[Name, 
+  Condition | logic.derivation.semantics.Construction] =
   map match
     case Nil => Map.empty
     case (name, conc) :: tail => 
       val tMap = translateMap(types, tail)
-      val cons = translateConcatenation(types, conc)
+      val mapped = conc match
+        case casted: Expression => translateExpression(types, casted)._1
+        case casted: Concatenation => translateConcatenation(types, casted)
       tMap.get(name) match
-        case Some(value) if value != cons => throw SemanticError("invalid substitution specified")
-        case _ => tMap + (name -> cons)
+        case Some(value) if value != mapped => throw SemanticError("invalid substitution specified")
+        case _ => tMap + (name -> mapped)
 
 //def normalizeContext
