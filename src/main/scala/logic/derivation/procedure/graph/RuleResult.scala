@@ -37,8 +37,10 @@ object RuleResult:
     ),
     "morphism_typing" -> RuleResult(false,
       TypeJudgement(TCheck(
-        Morphism.Parameter("A"),
-        Cat(Parameter("Cat"))))
+        Morphism.Parameter("f"),
+        HomSet(Parameter("Cat"),
+          Object.Parameter("A"),
+          Object.Parameter("B"))))
     ),
     "concatenation_typing" -> RuleResult(Vector(
       (Set(),
@@ -141,14 +143,16 @@ object RuleResult:
     "morphism_identity" -> RuleResult(Vector(
       (Set(),
         TypeJudgement(TCheck(
-          Morphism.Parameter("A"),
-          Cat(Parameter("Cat")))
+          Morphism.Parameter("f"),
+          HomSet(Parameter("Cat"),
+            Object.Parameter("A"),
+            Object.Parameter("B")))
         )
       )
     ),
       Equation(ECheck(
-        Object.Parameter("A"),
-        Object.Parameter("A")
+        Morphism.Parameter("f"),
+        Morphism.Parameter("f")
       ))
     ),
     "concatenation_equality" -> RuleResult(Vector(
@@ -202,7 +206,7 @@ object RuleResult:
       )
     ),
       Equation(ECheck(
-        Object.Domain(Morphism.Parameter("f")),
+        Object.Codomain(Morphism.Parameter("f")),
         Object.Parameter("B")
       ))
     ),
