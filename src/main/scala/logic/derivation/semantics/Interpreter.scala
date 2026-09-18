@@ -98,9 +98,9 @@ private def translateDiagram(types: Map[Name, Type],
 
           val morphs2: Map[Object, Set[Morphism]] =
             (for {
-              (cod1, morphSet) <- morphs
+              (cod1, morphSet) <- morphs.toList
               morph1 <- morphSet
-              (cod2, morphSet2) <- nEqs(cod1)
+              (cod2, morphSet2) <- nEqs(cod1).toList
               morph2 <- morphSet2
             } yield (cod2, Morphism.Concatenation(morph1, morph2)))
               .groupBy { _._1 }
@@ -112,7 +112,7 @@ private def translateDiagram(types: Map[Name, Type],
               num => num -> (morphs(num) ++ morphs2(num))
             }.toMap
 
-          (nVisited, eqs + (node -> morphsMerge))
+          (nVisited, nEqs + (node -> morphsMerge))
 
     linearVisit(diag.adjacency.toList.map(_._1), Set(),
       Map().withDefaultValue(Map().withDefaultValue(Set())))

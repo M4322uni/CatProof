@@ -3,7 +3,7 @@ package view.diagram.drawables
 import scalafx.scene.canvas.GraphicsContext
 import scala.collection.mutable.ArrayBuffer
 
-abstract class Drawable:
+abstract class Drawable extends Serializable:
   private var highlighted = false
 
   final def highlight(): Unit =

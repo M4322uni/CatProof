@@ -17,11 +17,12 @@ import view.diagram.drawables.{Arrow, Drawable, Line}
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.mutable.ArrayBuffer
 
-class Diagram extends ScrollPane:
+class Diagram(
+               private[view] val drawables: ArrayBuffer[Drawable] = ArrayBuffer()
+             ) extends ScrollPane:
 
   private val base = new Pane()
   private val canvas = new Canvas()
-  private[diagram] val drawables: ArrayBuffer[Drawable] = ArrayBuffer()
   private val selected: ArrayBuffer[Drawable] = ArrayBuffer()
   private var activeLine: Option[Line] = None
   private val refresh = AnimationTimer {_ => redraw()}
@@ -78,6 +79,16 @@ class Diagram extends ScrollPane:
   )
   canvas.widthProperty() <== base.width
   canvas.heightProperty() <== base.height
+
+  drawables.foreach {
+    case node: Node =>
+      base.prefWidth = math.max(base.prefWidth(), node.x + node.halfWidth + GROWTH_MARGIN)
+      base.prefHeight = math.max(base.prefHeight(), node.y + node.halfHeight + GROWTH_MARGIN)
+    case line: Line =>
+      base.prefWidth = math.max(base.prefWidth(), line.x + GROWTH_MARGIN)
+      base.prefHeight = math.max(base.prefHeight(), line.y + GROWTH_MARGIN)
+    case _ =>
+  }
 
   canvas.onKeyPressed = ke =>
     if ke.isControlDown && ke.code == KeyCode.Z

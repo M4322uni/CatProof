@@ -14,12 +14,15 @@ class Node(var x: Double,
                val tag: String,
               ) extends Drawable:
 
-  private val displayText: Text = {
+  private var savedFontFamily = "Serif"
+  private var savedPointSize = 20.0
+
+  @transient private lazy val displayText: Text = {
     val res = Text(tag)
-    res.font = Font("Serif", 20)
+    res.font = Font(savedFontFamily, savedPointSize)
     res
   }
-  private val bounds = displayText.layoutBounds()
+  @transient private lazy val bounds = displayText.layoutBounds()
 
   //  override def produce(commuteSection: Set[Arrow]): Set[Arrow]
   //    = component.produce(commuteSection)
@@ -28,11 +31,13 @@ class Node(var x: Double,
 
   def fontFamily_=(family: String): Unit =
     displayText.font = Font(family, displayText.font().getSize)
+    savedFontFamily = fontFamily
 
   def pointSize: Double = displayText.font().size
 
   def pointSize_=(p: Double): Unit =
     displayText.font = Font(displayText.font().family, p)
+    savedPointSize = pointSize
 
   def halfWidth: Double =
     displayText.layoutBounds().width / 2

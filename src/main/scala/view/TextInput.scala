@@ -23,13 +23,7 @@ object TextInput extends VirtualizedScrollPane(
         """)
     ):
 
-  addEventFilter(KeyEvent.KeyPressed, event =>
-    if event.controlDown && event.code == KeyCode.S then
-      post()
-      event.consume()
-  )
-
-  private def post(): Unit =
+  private[view] def post(): Unit =
     try
       Terminal.display(Proof(getContent.getText, DiagramView.tabs.map {
         tab => DiagramView.bindings(tab)

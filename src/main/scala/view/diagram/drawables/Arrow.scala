@@ -14,12 +14,12 @@ class Arrow private(val tag: String,
                         val dom: Node,
                         val cod: Node) extends Drawable:
 
-  private val displayText: Text = {
+  @transient private lazy val displayText: Text = {
     val res = Text(tag)
     res.font = Font("Serif", 20)
     res
   }
-  private val bounds = displayText.layoutBounds()
+  @transient private lazy val bounds = displayText.layoutBounds()
 
   private def xSignature: Double = math.tanh((cod.x - dom.x) / SMOOTHNESS_FACTOR)
   private def ySignature: Double = math.tanh((cod.y - dom.y) / SMOOTHNESS_FACTOR)

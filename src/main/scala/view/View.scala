@@ -6,17 +6,73 @@ import scalafx.application.JFXApp3
 import scalafx.application.JFXApp3.PrimaryStage
 import scalafx.geometry.Pos
 import scalafx.scene.Scene
-import scalafx.scene.control.{Button, SplitPane}
+import scalafx.scene.control.{Button, MenuButton, MenuItem, SplitPane}
 import scalafx.scene.image.Image
+import scalafx.scene.input.{KeyCode, KeyEvent}
 import scalafx.scene.layout.{BorderPane, HBox}
-import scalafx.util.Duration
+import scalafx.stage.FileChooser
+import scalafx.stage.FileChooser.ExtensionFilter
 import view.diagram.DiagramView
+import view.diagram.DiagramView.DiagramTab
+
+import java.io.{File, FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
+import scala.util.Using
 
 object View extends JFXApp3:
 
   val WINDOW_WIDTH: Int = 900
   val WINDOW_HEIGTH: Int = 600
   val LEFT_PANE_WIDTH_RATIO: Double = 1.0 / 3.0
+  var output: java.io.File = null
+
+  private def choose(save: Boolean = true): File =
+    val chooser = new FileChooser()
+    chooser.initialDirectory = java.io.File(System.getProperty("user.home"))
+    chooser.title = "Save File"
+    chooser.extensionFilters += ExtensionFilter("Save Files", "*.sav")
+    if save then chooser.showSaveDialog(stage)
+    else chooser.showOpenDialog(stage)
+
+  private def saveAs(): Unit =
+    val selectedFile = choose()
+    if selectedFile != null then
+      output =
+        if (selectedFile.getName.toLowerCase.endsWith(".sav"))
+          selectedFile
+        else
+          new java.io.File(selectedFile.getAbsolutePath + ".sav")
+      save()
+
+  private def save(): Unit =
+    if output == null then saveAs()
+    else
+      val save = SaveFile(TextInput.getContent.getText,
+        DiagramView.tabs.map {
+          tab => DiagramView.bindings(tab)
+        }.collect {
+          case diag: DiagramTab => (diag.name, diag.diagram.drawables)
+        }.toVector )
+      val out = ObjectOutputStream(
+        FileOutputStream(output)
+      )
+      try out.writeObject(save)
+      finally out.close()
+      TextInput.post()
+
+  private def load(): Unit =
+    val selectedFile = choose(false)
+    if selectedFile != null then
+      Using.Manager { use =>
+        val file = use(FileInputStream(selectedFile))
+        val load = use(ObjectInputStream(file))
+        val SaveFile(text, diag) = load.readObject().asInstanceOf[SaveFile]
+        require(text != null && diag != null, "Invalid save file")
+        DiagramView.load(diag)
+        TextInput.getContent.replaceText(text)
+        output = selectedFile
+      }.failed.foreach { error =>
+        Terminal.display(s"Unable to load file: ${error.getMessage}", true)
+      }
 
   override def start(): Unit =
     stage = new PrimaryStage:
@@ -30,9 +86,16 @@ object View extends JFXApp3:
         new Image(getClass.getResourceAsStream("/icons/128x128.png")),
         new Image(getClass.getResourceAsStream("/icons/256x256.png"))
       )
+
 //      resizable = false
       scene = new Scene:
         private val structure = BorderPane()
+        structure.addEventFilter(KeyEvent.KeyPressed, event =>
+          if event.controlDown && event.code == KeyCode.S then
+            save()
+            event.consume()
+        )
+
         private val leftStructure = BorderPane()
         private val tabs = DiagramView
         private val menu = HBox()
@@ -40,7 +103,18 @@ object View extends JFXApp3:
         structure.top = menu
         menu.alignment = Pos.CenterLeft
         menu.setPrefHeight(10)
-        private val file = new Button("File")
+        private val file = new MenuButton("File")
+        private val saveAsB = new MenuItem("Save as")
+        saveAsB.onAction = _ => { saveAs() }
+        private val saveB = new MenuItem("Save")
+        saveB.onAction = _ => { save() }
+        private val loadB = new MenuItem("Load")
+        loadB.onAction = _ => { load() }
+        file.items.addAll(
+          saveAsB,
+          saveB,
+          loadB
+        )
         menu.children.add(file)
         file.style =
           """
@@ -48,6 +122,7 @@ object View extends JFXApp3:
           -fx-background-radius: 4;
           -fx-border-color: transparent;
           """
+
         private val sheet = new Button("Sheet")
         menu.children.add(sheet)
         sheet.style =
