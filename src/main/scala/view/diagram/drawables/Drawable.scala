@@ -26,8 +26,8 @@ abstract class Drawable extends Serializable:
   final def removeFrom(drawables: ArrayBuffer[Drawable]): Unit =
     val index = drawables.indexWhere { d => d eq this }
     if index >= 0 then {
-      removeRoutine(drawables)
       drawables.remove(index)
+      removeRoutine(drawables)
     }
 
   protected def removeRoutine(drawables: ArrayBuffer[Drawable]): Unit

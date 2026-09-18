@@ -56,7 +56,7 @@ class DerivationTree private(
                 "with an invalid starting point")
               case _ => (context, mainGoals(goal._1)(goal._2)), seq)
         case RuleResult(cond: Boolean, post) => if cond || context.contains(post)
-          then () else throw DerivationError(s"wrong derivation for $goal")// check
+          then () else throw DerivationError(s"wrong derivation for ${goal._1}-${goal._2+1}")// check
       case None =>
         val got = nodes.get(goal._1)
         Leaf(line, getIdx(got), got match

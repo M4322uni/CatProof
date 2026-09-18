@@ -78,6 +78,7 @@ class Arrow private(val tag: String,
 
   override def drawActual(gc: GraphicsContext, highlighted: Boolean): Unit =
     gc.stroke = if highlighted then HIGHLIGHT_COLOR else NORMAL_COLOR
+    gc.fill = if highlighted then HIGHLIGHT_COLOR else NORMAL_COLOR
     gc.lineWidth = WIDTH
 
     if !(dom eq cod) then

@@ -57,7 +57,7 @@ class Node(var x: Double,
 
   override protected def removeRoutine(drawables: ArrayBuffer[Drawable]): Unit =
     drawables.filterInPlace {
-      case Arrow(_, _, this) | Arrow(_, this, _) => false
+      case Arrow(_, dom, cod) => (dom ne this) && (cod ne this)
       case _ => true
     }
 
