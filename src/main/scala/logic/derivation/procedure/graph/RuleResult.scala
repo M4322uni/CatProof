@@ -34,7 +34,7 @@ object RuleResult:
     "given" -> RuleResult(false,
       Condition.Parameter("A")
     ),
-    "concatenation_typing" -> RuleResult(Vector(
+    "composition_typing" -> RuleResult(Vector(
       (Set(),
         TypeJudgement(TCheck(
           Object.Parameter("A"),
@@ -82,11 +82,9 @@ object RuleResult:
           Cat(Parameter("Cat"))))
       ),
       (Set(),
-        TypeJudgement(TCheck(
-          Morphism.Parameter("f"),
-          HomSet(Parameter("Cat"),
-            Object.Parameter("A"),
-            Object.Parameter("B"))))
+        Equation(ECheck(
+          Obj(Object.Domain(Morphism.Parameter("f"))),
+          Obj(Object.Parameter("A"))))
       )
     ),
       Equation(ECheck(
@@ -104,11 +102,9 @@ object RuleResult:
           Cat(Parameter("Cat"))))
       ),
       (Set(),
-        TypeJudgement(TCheck(
-          Morphism.Parameter("f"),
-          HomSet(Parameter("Cat"),
-            Object.Parameter("B"),
-            Object.Parameter("A"))))
+        Equation(ECheck(
+          Obj(Object.Codomain(Morphism.Parameter("f"))),
+          Obj(Object.Parameter("A"))))
       )
     ),
       Equation(ECheck(
@@ -119,7 +115,47 @@ object RuleResult:
         Morph(Morphism.Parameter("f"))
       ))
     ),
-    "concatenation_equality" -> RuleResult(Vector(
+    "composition_equality" -> RuleResult(Vector(
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("f"),
+          MorphismType.HomSet(
+            Base("Cat"),
+            Object.Parameter("A"),
+            Object.Parameter("B")
+          )
+        ))
+      ),
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("h"),
+          MorphismType.HomSet(
+            Base("Cat"),
+            Object.Parameter("A"),
+            Object.Parameter("B")
+          )
+        ))
+      ),
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("g"),
+          MorphismType.HomSet(
+            Base("Cat"),
+            Object.Parameter("B"),
+            Object.Parameter("C")
+          )
+        ))
+      ),
+      (Set(),
+        TypeJudgement(TCheck(
+          Morphism.Parameter("i"),
+          MorphismType.HomSet(
+            Base("Cat"),
+            Object.Parameter("B"),
+            Object.Parameter("C")
+          )
+        ))
+      ),
       (Set(),
         Equation(ECheck(
           Morph(Morphism.Parameter("f")),
@@ -174,7 +210,20 @@ object RuleResult:
         Obj(Object.Parameter("B"))
       ))
     ),
-    "associativity" -> RuleResult(true,
+    "associativity" -> RuleResult(Vector(
+      (Set(),
+        Equation(ECheck(
+          Obj(Codomain(Morphism.Parameter("f"))),
+          Obj(Domain(Morphism.Parameter("g")))
+        ))
+      ),
+      (Set(),
+        Equation(ECheck(
+          Obj(Codomain(Morphism.Parameter("g"))),
+          Obj(Domain(Morphism.Parameter("h")))
+        ))
+      )
+    ),
       Equation(ECheck(
         Morph(Concatenation(
           Concatenation(
@@ -192,13 +241,13 @@ object RuleResult:
         ))
       ))
     ),
-    "equality_identity" -> RuleResult(true,
+    "equality_reflexivity" -> RuleResult(true,
       Equation(ECheck(
         Construction.Parameter("A"),
         Construction.Parameter("A")
       ))
     ),
-    "equality_simmetry" -> RuleResult(Vector(
+    "equality_symmetry" -> RuleResult(Vector(
       (Set(),
         Equation(ECheck(
           Construction.Parameter("A"),

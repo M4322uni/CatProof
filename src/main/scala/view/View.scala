@@ -10,7 +10,7 @@ import scalafx.scene.control.{Button, MenuButton, MenuItem, SplitPane}
 import scalafx.scene.image.Image
 import scalafx.scene.input.{KeyCode, KeyEvent}
 import scalafx.scene.layout.{BorderPane, HBox}
-import scalafx.stage.FileChooser
+import scalafx.stage.{FileChooser, Stage}
 import scalafx.stage.FileChooser.ExtensionFilter
 import view.diagram.DiagramView
 import view.diagram.DiagramView.DiagramTab
@@ -22,6 +22,7 @@ object View extends JFXApp3:
 
   val WINDOW_WIDTH: Int = 900
   val WINDOW_HEIGTH: Int = 600
+  val A4_RATIO: Double = 210.0 / 297.0
   val LEFT_PANE_WIDTH_RATIO: Double = 1.0 / 3.0
   var output: java.io.File = null
 
@@ -124,6 +125,16 @@ object View extends JFXApp3:
           """
 
         private val sheet = new Button("Sheet")
+        sheet.onAction = _ => {
+          new Stage:
+            title = "Cheat sheet"
+            initOwner(View.stage)
+
+            scene = new Scene(WINDOW_HEIGTH * A4_RATIO,
+              WINDOW_HEIGTH):
+              root = Sheet()
+          .show()
+        }
         menu.children.add(sheet)
         sheet.style =
           """
