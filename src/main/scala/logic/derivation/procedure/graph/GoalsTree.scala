@@ -1,7 +1,8 @@
 package logic.derivation.procedure.graph
 
 import logic.derivation.procedure.Condition
-import logic.derivation.procedure.graph.GoalsTree.setPrint
+import logic.derivation.procedure.graph.GoalsTree.*
+import logic.derivation.procedure.graph.GoalsTree.Quality.*
 import utils.Positive
 
 enum GoalsTree:
@@ -10,21 +11,33 @@ enum GoalsTree:
   case Fork(line: Positive, idx: Option[Int], open: (Set[Condition], Condition),
             subGoals: Seq[GoalsTree], closed: Boolean)
 
-  override def toString: String = recString()
+  def recString(prefix: String = "    ", connector: String = ""): Seq[(Quality, String)] =
+    val (line, idx, (pre, post), subs, closed) = this match
+      case Leaf(line, idx, open, closed) =>
+        (line, idx, open, Seq.empty[GoalsTree], closed)
+      case Fork(line, idx, open, subs, closed) =>
+        (line, idx, open, subs, closed)
 
-  private def recString(level: Int = 0): String =
-    "\t" * level + (this match
-      case Leaf(line, Some(idx), (pre, post), closed)
-        => s"$line-${idx+1}: ${setPrint(pre)} ⊢ $post" //prettyprint for sets and conds
-      case Leaf(line, None, (pre, post), closed)
-        => s"$line: ${setPrint(pre)} ⊢ $post"
-      case Fork(line, Some(idx), (pre, post), subs, closed)
-        => s"$line-${idx+1}: ${setPrint(pre)} ⊢ $post\n"
-        + subs.map { _.recString(level+1) }.mkString("\n")
-      case Fork(line, None, (pre, post), subs, closed)
-        => s"$line: ${setPrint(pre)} ⊢ $post\n"
-          + subs.map { _.recString(level+1) }.mkString("\n"))
+    val label = idx.fold(s"$line")(i => s"$line-${i+1}")
+    val childPrefix = prefix + (connector match
+      case "" => ""
+      case "└── " => "    "
+      case _ => "│   ")
+
+    Seq(
+      (BASELINE, prefix + connector),
+      (if closed then PROVEN else UNPROVEN, s"$label: ${setPrint(pre)} ⊢ $post")
+    ) ++ subs.zipWithIndex.flatMap { (sub, i) =>
+      Seq((BASELINE, "\n")) ++ sub.recString(
+        childPrefix, if i == subs.size - 1 then "└── " else "├── "
+      )
+    }
 
 object GoalsTree:
+
+  enum Quality:
+    case BASELINE
+    case PROVEN
+    case UNPROVEN
 
   private def setPrint(s: Set[Condition]): String = s.mkString(", ")

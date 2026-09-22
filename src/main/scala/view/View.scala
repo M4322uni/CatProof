@@ -1,7 +1,6 @@
 package view
 
 import scalafx.Includes.*
-import scalafx.animation.{KeyFrame, Timeline}
 import scalafx.application.JFXApp3
 import scalafx.application.JFXApp3.PrimaryStage
 import scalafx.geometry.Pos
@@ -24,7 +23,7 @@ object View extends JFXApp3:
   val WINDOW_HEIGTH: Int = 600
   val A4_RATIO: Double = 210.0 / 297.0
   val LEFT_PANE_WIDTH_RATIO: Double = 1.0 / 3.0
-  var output: java.io.File = null
+  var output: Option[java.io.File] = None
 
   private def choose(save: Boolean = true): File =
     val chooser = new FileChooser()
@@ -37,28 +36,30 @@ object View extends JFXApp3:
   private def saveAs(): Unit =
     val selectedFile = choose()
     if selectedFile != null then
-      output =
+      output = Some (
         if (selectedFile.getName.toLowerCase.endsWith(".sav"))
           selectedFile
         else
           new java.io.File(selectedFile.getAbsolutePath + ".sav")
+      )
       save()
 
   private def save(): Unit =
-    if output == null then saveAs()
-    else
-      val save = SaveFile(TextInput.getContent.getText,
-        DiagramView.tabs.map {
-          tab => DiagramView.bindings(tab)
-        }.collect {
-          case diag: DiagramTab => (diag.name, diag.diagram.drawables)
-        }.toVector )
-      val out = ObjectOutputStream(
-        FileOutputStream(output)
-      )
-      try out.writeObject(save)
-      finally out.close()
-      TextInput.post()
+    output match
+      case None => saveAs()
+      case Some(value) =>
+        val save = SaveFile(TextInput.getContent.getText,
+          DiagramView.tabs.map {
+            tab => DiagramView.bindings(tab)
+          }.collect {
+            case diag: DiagramTab => (diag.name, diag.diagram.drawables)
+          }.toVector )
+        val out = ObjectOutputStream(
+          FileOutputStream(value)
+        )
+        try out.writeObject(save)
+        finally out.close()
+        TextInput.post()
 
   private def load(): Unit =
     val selectedFile = choose(false)
@@ -70,9 +71,9 @@ object View extends JFXApp3:
         require(text != null && diag != null, "Invalid save file")
         DiagramView.load(diag)
         TextInput.getContent.replaceText(text)
-        output = selectedFile
+        output = Some(selectedFile)
       }.failed.foreach { error =>
-        Terminal.display(s"Unable to load file: ${error.getMessage}", true)
+        Terminal.display(s"Unable to load file: ${error.getMessage}")
       }
 
   override def start(): Unit =
