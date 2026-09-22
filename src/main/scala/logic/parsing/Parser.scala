@@ -8,6 +8,7 @@ import logic.parsing.Concatenation.*
 import logic.parsing.Expression.*
 import logic.parsing.Formula.*
 import logic.parsing.Type.*
+import logic.parsing.ProofStep.*
 import utils.*
 
 class Parser(text: String):
@@ -97,17 +98,27 @@ class Parser(text: String):
       .map { Include.apply }
 
   private def proof[$ : P]: P[List[(Int, ProofStep)]] =
-    P( (hard_indent ~ Index ~ IgnoreCase("use") ~ space_indent ~ 
-      rule ~ space_indent ~ application ~ space_indent ~ subst).repX )
-      .map { (str: Seq[(Int, Rule, (Positive, Option[Positive]), 
-        List[(Name, Expression | Concatenation)])]) =>
-        str.toList.map { (arg: Int, rule: Rule, app: (Positive, Option[Positive]),
-                   map: List[(Name, Expression | Concatenation)]) =>
-          app match
-            case (p1, Some(p2)) => (arg, ProofStep(rule, (p1, p2-1), map))
-            case (p, _) => (arg, ProofStep(rule, (p, 0), map))
-        } }
+    P( (hard_indent ~ Index ~ (use | repeat)).repX )
+      .map { (s: Seq[(Int, ProofStep)]) => s.toList }
     
+  private def use[$ : P]: P[Use] =
+    P( IgnoreCase("use") ~ space_indent ~ rule 
+      ~ space_indent ~ application ~ space_indent ~ subst )
+      .map { (rule: Rule, app: (Positive, Option[Positive]), 
+              map: List[(Name, Expression | Concatenation)]) =>
+        Use(rule, translatePointer(app), map) }
+    
+  private def repeat[$ : P]: P[Repeat] =
+    P( IgnoreCase("repeat") ~ space_indent ~ line 
+      ~ space_indent ~ application )
+      .map{ (step1: Positive, app: (Positive, Option[Positive])) 
+        => Repeat(translatePointer(app), step1)} 
+    
+  private def translatePointer(p: (Positive, Option[Positive])): (Positive, Int) =
+    p match
+      case (p1, Some(p2)) => (p1, p2-1)
+      case (p, _) => (p, 0)
+
   private def subst[$ : P]: P[List[(Name, Expression | Concatenation)]] =
     P( IgnoreCase("mapping") ~ space_indent ~ bind ~ ("," ~ space_indent ~ bind).repX )
       .map { (n: Name, c: Expression | Concatenation, s: Seq[(Name, Expression | Concatenation)]) 

@@ -60,4 +60,6 @@ enum Object:
       case Codomain(morph) => s"Cod($morph)"
       case Parameter(name) => name
 
-case class ProofStep(rule: Rule, post: (Positive, Int), map: Map[Name, Condition | Construction])
+enum ProofStep:
+  case Use(rule: Rule, post: (Positive, Int), subst: Map[Name, Condition | Construction])
+  case Repeat(post: (Positive, Int), where: Positive)

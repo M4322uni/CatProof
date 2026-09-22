@@ -12,15 +12,15 @@ import logic.derivation.semantics.Construction.{Morph, Obj}
 import logic.parsing.Rule
 import utils.Name
 
-case class RuleResult(pre: Vector[(Set[Condition], Condition)] | Boolean, post: Condition)
+case class RuleConstruct(pre: Vector[(Set[Condition], Condition)] | Boolean, post: Condition)
 
-object RuleResult:
+object RuleConstruct:
 
   private class SubstitutionError(msg: String)
     extends IllegalArgumentException(s"Substitution error: $msg")
 
-  private val ruleTranslation1: Map[String, RuleResult] = Map(
-    "identity" -> RuleResult(Vector(
+  private val ruleTranslation1: Map[String, RuleConstruct] = Map(
+    "identity" -> RuleConstruct(Vector(
       (Set(),
         TypeJudgement(TCheck(
           Object.Parameter("A"),
@@ -31,10 +31,10 @@ object RuleResult:
         MorphismType.HomSet(Parameter("Cat"),
           Object.Parameter("A"), Object.Parameter("A"))))
     ),
-    "given" -> RuleResult(false,
+    "given" -> RuleConstruct(false,
       Condition.Parameter("A")
     ),
-    "composition_typing" -> RuleResult(Vector(
+    "composition_typing" -> RuleConstruct(Vector(
       (Set(),
         TypeJudgement(TCheck(
           Object.Parameter("A"),
@@ -75,7 +75,7 @@ object RuleResult:
           Object.Parameter("C")))
       )
     ),
-    "left_identity_law" -> RuleResult(Vector(
+    "left_identity_law" -> RuleConstruct(Vector(
       (Set(),
         TypeJudgement(TCheck(
           Object.Parameter("A"),
@@ -95,7 +95,7 @@ object RuleResult:
         Morph(Morphism.Parameter("f"))
       ))
     ),
-    "right_identity_law" -> RuleResult(Vector(
+    "right_identity_law" -> RuleConstruct(Vector(
       (Set(),
         TypeJudgement(TCheck(
           Object.Parameter("A"),
@@ -115,7 +115,7 @@ object RuleResult:
         Morph(Morphism.Parameter("f"))
       ))
     ),
-    "composition_equality" -> RuleResult(Vector(
+    "composition_equality" -> RuleConstruct(Vector(
       (Set(),
         TypeJudgement(TCheck(
           Morphism.Parameter("f"),
@@ -180,7 +180,7 @@ object RuleResult:
         ))
       ))
     ),
-    "domain_definition" -> RuleResult(Vector(
+    "domain_definition" -> RuleConstruct(Vector(
       (Set(),
         TypeJudgement(TCheck(
           Morphism.Parameter("f"),
@@ -195,7 +195,7 @@ object RuleResult:
         Obj(Object.Parameter("A"))
       ))
     ),
-    "codomain_definition" -> RuleResult(Vector(
+    "codomain_definition" -> RuleConstruct(Vector(
       (Set(),
         TypeJudgement(TCheck(
           Morphism.Parameter("f"),
@@ -210,7 +210,7 @@ object RuleResult:
         Obj(Object.Parameter("B"))
       ))
     ),
-    "associativity" -> RuleResult(Vector(
+    "associativity" -> RuleConstruct(Vector(
       (Set(),
         Equation(ECheck(
           Obj(Codomain(Morphism.Parameter("f"))),
@@ -241,13 +241,13 @@ object RuleResult:
         ))
       ))
     ),
-    "equality_reflexivity" -> RuleResult(true,
+    "equality_reflexivity" -> RuleConstruct(true,
       Equation(ECheck(
         Construction.Parameter("A"),
         Construction.Parameter("A")
       ))
     ),
-    "equality_symmetry" -> RuleResult(Vector(
+    "equality_symmetry" -> RuleConstruct(Vector(
       (Set(),
         Equation(ECheck(
           Construction.Parameter("A"),
@@ -259,7 +259,7 @@ object RuleResult:
         Construction.Parameter("A")
       ))
     ),
-    "equality_transitivity" -> RuleResult(Vector(
+    "equality_transitivity" -> RuleConstruct(Vector(
       (Set(),
         Equation(ECheck(
           Construction.Parameter("A"),
@@ -279,14 +279,14 @@ object RuleResult:
     )
   )
 
-  private val ruleTranslation2: Map[String, String => RuleResult] = Map(
+  private val ruleTranslation2: Map[String, String => RuleConstruct] = Map(
 
   )
 
-  def apply(rule: Rule, map: Map[Name, Construction | Condition]): RuleResult =
+  def apply(rule: Rule, map: Map[Name, Construction | Condition]): RuleConstruct =
     subst(translate(rule), map)
 
-  private def translate(rule: Rule): RuleResult =
+  private def translate(rule: Rule): RuleConstruct =
     rule match
       case Rule(name, Some(parameter)) => ruleTranslation2.get(name.toLowerCase) match
         case Some(func) => func(parameter)
@@ -295,14 +295,14 @@ object RuleResult:
         case Some(ruleResult) => ruleResult
         case _ => throw DerivationError(s"a \"$name\" rule is not yet implemented")
 
-  private def subst(ruleResult: RuleResult, subst: Map[Name, Construction | Condition]): RuleResult =
-    val RuleResult(pre, post) = ruleResult
+  private def subst(ruleConstruct: RuleConstruct, subst: Map[Name, Construction | Condition]): RuleConstruct =
+    val RuleConstruct(pre, post) = ruleConstruct
     val pre2: Vector[(Set[Condition], Condition)] | Boolean = pre match
       case vect: Vector[(Set[Condition], Condition)] => vect.map {
         (s: Set[Condition], c: Condition) => (s.map { substCondition(_, subst) }, substCondition(c, subst))
       }
       case els: Boolean => els
-    RuleResult(pre2, substCondition(post, subst))
+    RuleConstruct(pre2, substCondition(post, subst))
 
   private def substCondition(condition: Condition, subst: Map[Name, Construction | Condition]): Condition =
     condition match

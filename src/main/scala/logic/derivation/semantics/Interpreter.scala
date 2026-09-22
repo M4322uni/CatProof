@@ -11,6 +11,7 @@ import logic.parsing.Type.*
 import logic.derivation.semantics.*
 import TranslateCapsule.*
 import logic.derivation.semantics.Construction.{Morph, Obj}
+import logic.derivation.semantics.ProofStep.*
 import logic.parsing.Concatenation.*
 import utils.{Name, Positive}
 
@@ -265,8 +266,11 @@ private def translateNameBound(n: NameBound): TranslateCapsule =
 
 def translateProofStep(types: Map[Name, Type],
                        p: (Positive, logic.parsing.ProofStep)): (Positive, ProofStep) =
-  val (pos, logic.parsing.ProofStep(rule, post, map)) = p
-  (pos, ProofStep(rule, post, translateMap(types, map)))
+  p match
+    case (pos, logic.parsing.ProofStep.Use(rule, post, map)) 
+      => (pos, Use(rule, post, translateMap(types, map)))
+    case (pos, logic.parsing.ProofStep.Repeat(post, where))
+      => (pos, Repeat(post, where))
   
 private def translateMap(types: Map[Name, Type],
                          map: List[(Name, Expression | Concatenation)]): Map[Name, 
