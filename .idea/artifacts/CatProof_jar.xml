@@ -1,0 +1,39 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="CatProof:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/CatProof_jar</output-path>
+    <root id="archive" name="CatProof.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="CatProof.main" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/reactfx/reactfx/2.0-M5/reactfx-2.0-M5.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/26/javafx-controls-26-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-media/26/javafx-media-26.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-swing/26/javafx-swing-26.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/fxmisc/wellbehaved/wellbehavedfx/0.3.3/wellbehavedfx-0.3.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-swing/26/javafx-swing-26-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/26/javafx-controls-26.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/sourcecode_3/0.4.0/sourcecode_3-0.4.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/jdk-jsobject/26/jdk-jsobject-26-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/fxmisc/richtext/richtextfx/0.11.7/richtextfx-0.11.7.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-web/26/javafx-web-26-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/26/javafx-graphics-26.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/fastparse_3/3.1.1/fastparse_3-3.1.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-fxml/26/javafx-fxml-26.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/jdk-jsobject/26/jdk-jsobject-26.jar" path-in-jar="/" />
+      <element id="library" level="project" name="sbt: scala-sdk-3.8.4" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-web/26/javafx-web-26.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.8.4/scala3-library_3-3.8.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-base/26/javafx-base-26-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.sbt/boot/scala-3.8.4/lib/scala-library.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-base/26/javafx-base-26.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-media/26/javafx-media-26-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/fxmisc/flowless/flowless/0.7.4/flowless-0.7.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scalafx/scalafx_3/26.0.0-R38/scalafx_3-26.0.0-R38.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/26/javafx-graphics-26-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/fxmisc/undo/undofx/2.1.1/undofx-2.1.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/geny_3/1.1.0/geny_3-1.1.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-fxml/26/javafx-fxml-26-linux.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
