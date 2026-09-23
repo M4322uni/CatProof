@@ -1,6 +1,8 @@
 package logic.derivation
 
 import logic.derivation.Proof.Mode
+import logic.derivation.Proof.Mode.SYMBOLIC
+import logic.derivation.procedure.Condition
 import logic.derivation.procedure.graph.GoalsTree.{Fork, Leaf, Quality}
 import logic.derivation.procedure.graph.GoalsTree.Quality.*
 import logic.derivation.procedure.graph.{DerivationTree, GoalsTree}
@@ -40,12 +42,17 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     objectives match
       case seq if seq.isEmpty => Seq((BASELINE, "Waiting for user input..."))
       case _ =>
-        Seq( (BASELINE, "Derivation tree:\n") ) ++ (
-        objectives.reverse
-          .map {
-            _.recString(mode)
+        val (fSeq, fContexts) = objectives.reverse
+          .foldLeft(Seq.empty[Seq[(Quality, String)]], List.empty[Set[Condition]]) {
+            (t1: (Seq[Seq[(Quality, String)]], List[Set[Condition]]),
+              goal: GoalsTree) =>
+              val (seq, contexts) = t1
+              val (nSeq, nContexts) = goal.recString(mode, contexts)
+              (seq ++ Seq(nSeq), nContexts)
           }
-          ++ (
+
+        Seq( (BASELINE, "Derivation tree:\n") ) ++ (
+        fSeq ++ (
           if objectives.forall {
             case Leaf(_, _, _, true) => true
             case Fork(_, _, _, _, true) => true
@@ -58,6 +65,17 @@ class Proof(body: String, diagrams: Seq[Diagram]):
           (s1: Seq[(Quality, String)], s2: Seq[(Quality, String)]) =>
             s1 ++ Seq((BASELINE, "\n\n    ---\n\n")) ++ s2
         }
+        ++ Seq( (BASELINE, "\n\n") )
+        ++ ( if mode == SYMBOLIC then printGammas(fContexts) else Seq() )
+
+  private def printGammas(gammas: List[Set[Condition]]): Seq[(Quality, String)] =
+
+    Seq( (BASELINE, "Contexts:\n") )
+    ++ gammas.indices.map {
+      (idx: Int) =>
+        (BASELINE,
+          s"    Γ${GoalsTree.subscript(idx+1)} = ${GoalsTree.simplePrint(gammas(idx))}\n")
+    }
     
 object Proof:
 
