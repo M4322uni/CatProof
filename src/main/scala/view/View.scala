@@ -5,7 +5,7 @@ import scalafx.application.JFXApp3
 import scalafx.application.JFXApp3.PrimaryStage
 import scalafx.geometry.Pos
 import scalafx.scene.Scene
-import scalafx.scene.control.{Button, MenuButton, MenuItem, SplitPane}
+import scalafx.scene.control.{Button, MenuButton, MenuItem, RadioMenuItem, SplitPane, ToggleGroup}
 import scalafx.scene.image.Image
 import scalafx.scene.input.{KeyCode, KeyEvent}
 import scalafx.scene.layout.{BorderPane, HBox}
@@ -23,6 +23,7 @@ object View extends JFXApp3:
   val WINDOW_HEIGTH: Int = 600
   val A4_RATIO: Double = 210.0 / 297.0
   val LEFT_PANE_WIDTH_RATIO: Double = 1.0 / 3.0
+  val DISPLAY_OPTIONS: ToggleGroup = ToggleGroup()
   var output: Option[java.io.File] = None
 
   private def choose(save: Boolean = true): File =
@@ -75,6 +76,7 @@ object View extends JFXApp3:
       }.failed.foreach { error =>
         Terminal.display(s"Unable to load file: ${error.getMessage}")
       }
+      TextInput.post()
 
   override def start(): Unit =
     stage = new PrimaryStage:
@@ -138,6 +140,30 @@ object View extends JFXApp3:
         }
         menu.children.add(sheet)
         sheet.style =
+          """
+          -fx-background-color: transparent;
+          -fx-background-radius: 4;
+          -fx-border-color: transparent;
+          """
+
+        private val options = MenuButton("Options")
+        private val verbose = new RadioMenuItem("Verbose display"):
+          toggleGroup = DISPLAY_OPTIONS
+          selected = true
+        private val types = new RadioMenuItem("Only types displayed"):
+          toggleGroup = DISPLAY_OPTIONS
+        private val equations = new RadioMenuItem("Only equations displayed"):
+          toggleGroup = DISPLAY_OPTIONS
+        private val symbolic = new RadioMenuItem("Symbolic display"):
+          toggleGroup = DISPLAY_OPTIONS
+        options.items.addAll(
+          verbose,
+          types,
+          equations,
+          symbolic
+        )
+        menu.children.add(options)
+        options.style =
           """
           -fx-background-color: transparent;
           -fx-background-radius: 4;

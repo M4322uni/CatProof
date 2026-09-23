@@ -6,7 +6,7 @@ import org.fxmisc.richtext.LineNumberFactory
 import View.{LEFT_PANE_WIDTH_RATIO, WINDOW_HEIGTH, WINDOW_WIDTH}
 import logic.derivation.Proof
 import org.fxmisc.flowless.VirtualizedScrollPane
-import scalafx.scene.input.{KeyCode, KeyEvent}
+import logic.derivation.Proof.Mode.*
 import view.diagram.DiagramView
 import view.diagram.DiagramView.DiagramTab
 
@@ -30,7 +30,16 @@ object TextInput extends VirtualizedScrollPane(
         tab => DiagramView.bindings(tab)
       }.collect {
         case diag: DiagramTab => diag.logicTranslate()
-      }.toSeq)()
-      )
+      }.toSeq)(
+        View.DISPLAY_OPTIONS.selectedToggle.value match
+        case item: javafx.scene.control.RadioMenuItem =>
+          item.getText match
+            case "Verbose display" => VERBOSE
+            case "Only types displayed" => TYPINGS
+            case "Only equations displayed" => EQUATIONS
+            case "Symbolic display" => SYMBOLIC
+        case _ =>
+          throw IllegalArgumentException("Unexpected display mode selected")
+      ))
     catch
       case f: IllegalArgumentException => Terminal.display(f.getMessage)

@@ -1,5 +1,6 @@
 package logic.derivation
 
+import logic.derivation.Proof.Mode
 import logic.derivation.procedure.graph.GoalsTree.{Fork, Leaf, Quality}
 import logic.derivation.procedure.graph.GoalsTree.Quality.*
 import logic.derivation.procedure.graph.{DerivationTree, GoalsTree}
@@ -10,7 +11,7 @@ import utils.*
 
 class Proof(body: String, diagrams: Seq[Diagram]):
 
-  def apply(): Seq[(Quality, String)] =
+  def apply(mode: Mode): Seq[(Quality, String)] =
     def includes(formulas: Iterable[(Positive, Formula) | Formula]): Map[Name, Diagram] =
       
       def mapDiagram(name: Name): (Name, Diagram) =
@@ -33,16 +34,16 @@ class Proof(body: String, diagrams: Seq[Diagram]):
     val finalTree = steps.foldLeft(startingTree) { (graph, step) => graph.extend(step) }
     val objectives = finalTree.solve(context)
 
-    printout(objectives)
+    printout(objectives, mode)
 
-  private def printout(objectives: Seq[GoalsTree]): Seq[(Quality, String)] =
+  private def printout(objectives: Seq[GoalsTree], mode: Mode): Seq[(Quality, String)] =
     objectives match
       case seq if seq.isEmpty => Seq((BASELINE, "Waiting for user input..."))
       case _ =>
         Seq( (BASELINE, "Derivation tree:\n") ) ++ (
         objectives.reverse
           .map {
-            _.recString()
+            _.recString(mode)
           }
           ++ (
           if objectives.forall {
@@ -59,6 +60,12 @@ class Proof(body: String, diagrams: Seq[Diagram]):
         }
     
 object Proof:
-  
+
+  enum Mode:
+    case VERBOSE
+    case TYPINGS
+    case EQUATIONS
+    case SYMBOLIC
+
   def apply(body: String, diagrams: Seq[Diagram]) =
     new Proof(body, diagrams)
