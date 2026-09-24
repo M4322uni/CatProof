@@ -127,25 +127,6 @@ object View extends JFXApp3:
           -fx-border-color: transparent;
           """
 
-        private val sheet = new Button("Sheet")
-        sheet.onAction = _ => {
-          new Stage:
-            title = "Cheat sheet"
-            initOwner(View.stage)
-
-            scene = new Scene(WINDOW_HEIGTH * A4_RATIO,
-              WINDOW_HEIGTH):
-              root = Sheet()
-          .show()
-        }
-        menu.children.add(sheet)
-        sheet.style =
-          """
-          -fx-background-color: transparent;
-          -fx-background-radius: 4;
-          -fx-border-color: transparent;
-          """
-
         private val options = MenuButton("Options")
         private val verbose = new RadioMenuItem("Verbose display"):
           toggleGroup = DISPLAY_OPTIONS
@@ -164,6 +145,25 @@ object View extends JFXApp3:
         )
         menu.children.add(options)
         options.style =
+          """
+          -fx-background-color: transparent;
+          -fx-background-radius: 4;
+          -fx-border-color: transparent;
+          """
+
+        private val sheet = new Button("Sheet")
+        sheet.onAction = _ => {
+          new Stage:
+            title = "Cheat sheet"
+            initOwner(View.stage)
+
+            scene = new Scene(WINDOW_HEIGTH * A4_RATIO,
+              WINDOW_HEIGTH):
+              root = Sheet()
+          .show()
+        }
+        menu.children.add(sheet)
+        sheet.style =
           """
           -fx-background-color: transparent;
           -fx-background-radius: 4;
