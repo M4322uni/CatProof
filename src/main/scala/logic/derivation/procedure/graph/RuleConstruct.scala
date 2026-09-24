@@ -250,13 +250,13 @@ object RuleConstruct:
     "equality_symmetry" -> RuleConstruct(Vector(
       (Set(),
         Equation(ECheck(
-          Construction.Parameter("A"),
-          Construction.Parameter("B")
+          Construction.Parameter("B"),
+          Construction.Parameter("A")
         ))
       )),
       Equation(ECheck(
-        Construction.Parameter("B"),
-        Construction.Parameter("A")
+        Construction.Parameter("A"),
+        Construction.Parameter("B")
       ))
     ),
     "equality_transitivity" -> RuleConstruct(Vector(

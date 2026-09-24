@@ -68,9 +68,9 @@ class Parser(text: String):
       }
 
   private def construction[$ : P]: P[Construction] =
-    P( "dom(" ~ indent_blank ~ concatenation.map { Dom.apply } ~ indent_blank ~ ")"
-      | "cod(" ~ indent_blank ~ concatenation.map { Cod.apply } ~ indent_blank ~ ")"
-      | "id(" ~ indent_blank ~ construction.map { Id.apply } ~ indent_blank ~ ")"
+    P( IgnoreCase("dom(") ~ indent_blank ~ concatenation.map { Dom.apply } ~ indent_blank ~ ")"
+      | IgnoreCase("cod(") ~ indent_blank ~ concatenation.map { Cod.apply } ~ indent_blank ~ ")"
+      | IgnoreCase("id(") ~ indent_blank ~ construction.map { Id.apply } ~ indent_blank ~ ")"
       | name_bound.map { Atomic.apply } )
 
   private def name_bound[$ : P]: P[NameBound] =
