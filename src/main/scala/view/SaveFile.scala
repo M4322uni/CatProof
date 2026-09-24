@@ -6,4 +6,4 @@ import view.diagram.{Diagram, DiagramView}
 
 import scala.collection.mutable.ArrayBuffer
 
-case class SaveFile(text: String, diagrams: Vector[(Name, ArrayBuffer[Drawable])])
+case class SaveFile(text: String, diagrams: Vector[(Name, Name, ArrayBuffer[Drawable])])

@@ -53,7 +53,7 @@ object View extends JFXApp3:
           DiagramView.tabs.map {
             tab => DiagramView.bindings(tab)
           }.collect {
-            case diag: DiagramTab => (diag.name, diag.diagram.drawables)
+            case diag: DiagramTab => (diag.name, diag.diagram.categoryName, diag.diagram.drawables)
           }.toVector )
         val out = ObjectOutputStream(
           FileOutputStream(value)
@@ -73,10 +73,10 @@ object View extends JFXApp3:
         DiagramView.load(diag)
         TextInput.getContent.replaceText(text)
         output = Some(selectedFile)
-      }.failed.foreach { error =>
-        Terminal.display(s"Unable to load file: ${error.getMessage}")
-      }
-      TextInput.post()
+      }.fold(
+        error => Terminal.display(s"Unable to load file: ${error.getMessage}"),
+        _ => TextInput.post()
+      )
 
   override def start(): Unit =
     stage = new PrimaryStage:

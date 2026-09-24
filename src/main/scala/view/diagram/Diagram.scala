@@ -10,6 +10,7 @@ import scalafx.scene.control.{ScrollPane, TextField}
 import scalafx.scene.input.MouseButton.{Middle, Primary, Secondary}
 import scalafx.scene.input.{KeyCode, MouseEvent}
 import scalafx.scene.layout.Pane
+import utils.Name
 import view.diagram.Diagram.*
 import view.diagram.drawables.nodes.Node
 import view.diagram.drawables.{Arrow, Drawable, Line}
@@ -18,6 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.mutable.ArrayBuffer
 
 class Diagram(
+               private[view] val categoryName: Name,
                private[view] val drawables: ArrayBuffer[Drawable] = ArrayBuffer()
              ) extends ScrollPane:
 
@@ -37,6 +39,19 @@ class Diagram(
 
     private val fieldWidth = 100.0
     private val closed = new AtomicBoolean(false)
+    var name: Option[Name] = None
+
+    text.onChange {
+      name =
+        try
+          val validName = Name(text())
+          style = "-fx-text-fill: black;"
+          Some(validName)
+        catch
+          case _: IllegalArgumentException =>
+            style = "-fx-text-fill: red;"
+            None
+    }
 
     promptText = prompt
     prefWidth = fieldWidth
@@ -57,7 +72,8 @@ class Diagram(
     textField.requestFocus()
 
     textField.onAction = _ =>
-      textField.endText()
+      if textField.name.nonEmpty || textField.text().isEmpty then
+        textField.endText()
 
     textField.focused.onChange { (_, _, hasFocus) =>
       if !hasFocus then
@@ -105,10 +121,7 @@ class Diagram(
       case Secondary =>
         val pop = new NamePop("Node name", me.x, me.y, canvas, base):
           override def close(): Unit =
-            val name = text().trim
-
-            if name.nonEmpty then
-              Node(me.x, me.y, name).addTo(drawables)
+            name.foreach { n => Node(me.x, me.y, n).addTo(drawables) }
 
         nameEnter(pop)
 
@@ -190,10 +203,7 @@ class Diagram(
               override def close(): Unit =
                 line.removeFrom(drawables)
 
-                val name = text().trim
-
-                if name.nonEmpty then
-                  Arrow(name, d1, d2).addTo(drawables)
+                name.foreach { n => Arrow(n, d1, d2).addTo(drawables) }
 
             nameEnter(pop)
 

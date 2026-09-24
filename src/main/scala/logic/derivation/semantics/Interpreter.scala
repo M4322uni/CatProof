@@ -68,7 +68,10 @@ private def translateDiagram(types: Map[Name, Type],
         val r1 = extendTypes(res, name1, ObjectType.Cat(diag.cat))
         val r2 = extendTypes(r1, name2, ObjectType.Cat(diag.cat))
         extendTypes(r2, name3, MorphismType.HomSet(diag.cat, dom, cod))
-      case Nil => Map()
+      case Nil => diag.adjacency.keys.map {
+        case Object.Base(name) => name -> ObjectType.Cat(diag.cat)
+        case _ => throw IllegalArgumentException("Diagrams with constructions not yet implemented")
+      }.toMap
       case _ => throw IllegalArgumentException("Diagrams with constructions not yet implemented")
 
   def diagramDFS(): (Set[Object], Map[Object, Map[Object, Set[Morphism]]]) =
