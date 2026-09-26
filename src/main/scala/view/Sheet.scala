@@ -5,8 +5,8 @@ import scalafx.beans.property.DoubleProperty
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.control.ScrollPane
 import scalafx.scene.image.{Image, ImageView}
+import scalafx.scene.input.{KeyCode, KeyEvent, ScrollEvent}
 import scalafx.scene.layout.VBox
-import javafx.scene.input.{KeyCode, KeyEvent, ScrollEvent}
 
 class Sheet extends ScrollPane:
   val OFFSET: Int = 40
@@ -35,21 +35,21 @@ class Sheet extends ScrollPane:
   pannable = true
   focusTraversable = true
 
-  delegate.addEventFilter(ScrollEvent.SCROLL, event =>
-    if event.isControlDown then
+  filterEvent(ScrollEvent.Scroll) { (event: ScrollEvent) =>
+    if event.controlDown then
       zoom.value = math.max(MIN_ZOOM, math.min(MAX_ZOOM,
-        zoom() + math.signum(event.getDeltaY) * ZOOM_STEP))
+        zoom() + math.signum(event.deltaY) * ZOOM_STEP))
       event.consume()
-  )
+  }
 
-  delegate.addEventFilter(KeyEvent.KEY_PRESSED, event =>
-    if event.isControlDown then
-      val direction = event.getCode match
-        case KeyCode.PLUS | KeyCode.EQUALS | KeyCode.ADD => 1
-        case KeyCode.MINUS | KeyCode.SUBTRACT => -1
+  filterEvent(KeyEvent.KeyPressed) { (event: KeyEvent) =>
+    if event.controlDown then
+      val direction = event.code match
+        case KeyCode.Plus | KeyCode.Equals | KeyCode.Add => 1
+        case KeyCode.Minus | KeyCode.Subtract => -1
         case _ => 0
       if direction != 0 then
         zoom.value = math.max(MIN_ZOOM, math.min(MAX_ZOOM,
           zoom() + direction * ZOOM_STEP))
         event.consume()
-  )
+  }
