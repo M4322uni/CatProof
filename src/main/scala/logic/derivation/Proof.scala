@@ -51,7 +51,7 @@ class Proof(body: String, diagrams: Seq[Diagram]):
               (seq ++ Seq(nSeq), nContexts)
           }
 
-        Seq( (BASELINE, "Derivation tree:\n") ) ++ (
+        Seq( (BASELINE, "Goal trees:\n") ) ++ (
         fSeq ++ (
           if objectives.forall {
             case Leaf(_, _, _, true) => true
