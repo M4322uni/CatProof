@@ -54,14 +54,14 @@ class Parser(text: String):
         case Some((c1: Concatenation, c2: Concatenation)) => HomSet(cat, c1, c2)
         case _ => Cat(cat)}
 
-  private def disambiguate[$ : P]: P[Concatenation] =
+  private def disambiguated[$ : P]: P[Concatenation] =
     P( "(" ~ indent_blank ~ concatenation ~ indent_blank ~ ")" | construction ).map {
       case casted: Construction => Leaf(casted)
       case casted: Concatenation => casted
     }
 
   private def concatenation[$ : P]: P[Concatenation] =
-    P( disambiguate ~ indent_blank ~ ";" ~ indent_blank ~ disambiguate | construction )
+    P( disambiguated ~ indent_blank ~ ";" ~ indent_blank ~ disambiguated | construction )
       .map {
         case (lhs: Concatenation, rhs: Concatenation) => Binary(lhs, rhs)
         case casted: Construction => Leaf(casted)
