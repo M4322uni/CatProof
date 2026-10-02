@@ -75,52 +75,47 @@ private def translateDiagram(types: Map[Name, Type],
       }.toMap
       case _ => throw IllegalArgumentException("Diagrams with constructions not yet implemented")
 
-  def diagramDFS(): (Set[Node], Map[Node, Map[Node, Set[Morphism]]]) =
-
-    @tailrec
-    def linearVisit(front: List[Node], visited: Set[Node],
-                    eqs: Map[Node, Map[Node, Set[Morphism]]]): (Set[Node],
-      Map[Node, Map[Node, Set[Morphism]]]) =
-        front match
-          case head :: tail =>
-            val (nVisited, nEqs) = diagramDFS_r(head, visited, eqs)
-            linearVisit(tail, nVisited, nEqs)
-          case Nil => (visited, eqs)
-
-    def diagramDFS_r(node: Node, visited: Set[Node],
-                   eqs: Map[Node, Map[Node, Set[Morphism]]]): (Set[Node],
-      Map[Node, Map[Node, Set[Morphism]]]) =
-
-        if visited.contains(node) then (visited, eqs)
+  def catBellman(step: Int): (Boolean, Map[Node, Map[Node,
+    Set[(Morphism, Set[(Morphism, Node, Node)])]]]) =
+    step match
+      case 0 | 1 =>
+        (step == 0, diag.adjacency.map { (node1, set) => node1 -> set.groupBy { _._2 }
+          .map { (node2, set) => node2 -> set.map { (morph, _) => (morph, Set((morph, node1, node2))) } } })
+      case i if i > 1 =>
+        val (cut, rec) = catBellman(step-1)
+        if cut then (true, rec)
         else
-          val (nVisited, nEqs) = linearVisit(diag.adjacency(node)
-            .toList
-            .map(_._2),
-            visited + node, eqs)
-
-          val morphs: Map[Node, Set[Morphism]] = diag.adjacency(node).groupBy { _._2 }
-            .map { (obj, set) => obj -> set.map { _._1 } }.withDefaultValue(Set())
-
-          val morphs2: Map[Node, Set[Morphism]] =
+          val nTab: Iterable[(Node, Node, Morphism, Set[(Morphism, Node, Node)])] =
             (for {
-              (cod1, morphSet) <- morphs.toList
-              morph1 <- morphSet
-              (cod2, morphSet2) <- nEqs(cod1).toList
-              morph2 <- morphSet2
-            } yield (cod2, Morphism.Concatenation(morph1, morph2)))
-              .groupBy { _._1 }
-              .map { (obj, map) => obj ->
-                map.map { (obj, morph) => morph }.toSet }.withDefaultValue(Set())
-
-          val morphsMerge: Map[Node, Set[Morphism]] =
-            (morphs.keys.toSet ++ morphs2.keys).map {
-              num => num -> (morphs(num) ++ morphs2(num))
-            }.toMap
-
-          (nVisited, nEqs + (node -> morphsMerge))
-
-    linearVisit(diag.adjacency.toList.map(_._1), Set(),
-      Map().withDefaultValue(Map().withDefaultValue(Set())))
+              key1 <- rec.keys
+              (morph1, neighbor) <- diag.adjacency(key1)
+              key2 <- rec(neighbor).keys
+              (morph2, checkSet) <- rec(neighbor)(key2)
+            }
+            yield {
+              if !checkSet.contains((morph1, key1, neighbor)) then
+                Some(key1, key2,
+                  Morphism.Concatenation(morph1, morph2), checkSet + ((morph1, key1, neighbor)))
+              else None
+            }).collect {
+              case Some(value: (Node, Node, Morphism, Set[(Morphism, Node, Node)])) => value
+            }
+          val uTab: Map[Node, Map[Node, Set[(Morphism, Set[(Morphism, Node, Node)])]]] =
+            nTab.foldLeft(rec) { case (table, (from, to, morph, checkSet)) =>
+              val destinations = table(from)
+              val paths = destinations.getOrElse(to, Set.empty) + (morph -> checkSet)
+              table.updated(from, destinations.updated(to, paths))
+            }
+          ((for {
+            key1 <- uTab.keys
+            key2 <- uTab(key1).keys
+          } yield {
+            rec(key1).get(key2) match
+              case Some(set) =>
+                set.size == uTab(key1)(key2).size
+              case _ => false
+          }).forall { identity }, uTab)
+      case _ => throw DerivationError("error in diagram translation")
 
   // type all the edges and nodes
   val typesAdd: Map[Name, Type] =
@@ -145,12 +140,13 @@ private def translateDiagram(types: Map[Name, Type],
       case Some(x) => x
     }
 
-  val (_, equalityConstraints) = diagramDFS()
+  val (_, equalityConstraints) = catBellman(diag.adjacency.map { _._2.size }.sum)
 
   val eqConditions: Set[Condition] = (
     for {
       (_, point) <- equalityConstraints
-      (_, set) <- point
+      (_, disc) <- point
+      set = disc.map { _._1 }
       first: Morphism <- set.headOption
       morph: Morphism <- set.tail
     } yield Condition.Equation(ECheck(Morph(first), Morph(morph)))
