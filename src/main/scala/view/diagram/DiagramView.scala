@@ -43,10 +43,23 @@ object DiagramView extends TabPane:
       diagram.stopRefresh()
 
     def logicTranslate(): logic.derivation.Diagram =
-      val temp: Map[Object, Set[(Morphism, Object)]] = diagram.drawables.collect {
+      val identify: mutable.Map[Node, Int] = mutable.Map()
+      var lastIdx: Int = 0
+
+      def getIdx(nod: Node) =
+        identify.get(nod) match
+          case Some(idx) => idx
+          case None =>
+            lastIdx += 1
+            identify += nod -> lastIdx
+            lastIdx
+
+      val temp: Map[logic.derivation.Diagram.Node,
+        Set[(Morphism, logic.derivation.Diagram.Node)]] = diagram.drawables.collect {
         case casted: Node => casted
-      }.map { node => Base(node.tag) -> diagram.drawables.collect {
-        case Arrow(name, dom, cod) if dom == node => (Morphism.Base(name), Base(cod.tag)) //TODO check where else to do this
+      }.map { node => logic.derivation.Diagram.Node(getIdx(node), Base(node.tag)) -> diagram.drawables.collect {
+        case Arrow(name, dom, cod) if dom == node => (Morphism.Base(name),
+          logic.derivation.Diagram.Node(getIdx(cod), Base(cod.tag))) //TODO check where else to do this
       }.toSet }.toMap
       logic.derivation.Diagram(name, Category.Base(diagram.categoryName), temp)
 

@@ -10,6 +10,7 @@ import logic.parsing.Formula.*
 import logic.parsing.Type.*
 import logic.derivation.semantics.*
 import TranslateCapsule.*
+import logic.derivation.Diagram.Node
 import logic.derivation.semantics.Construction.{Morph, Obj}
 import logic.derivation.semantics.ProofStep.*
 import logic.parsing.Concatenation.*
@@ -68,27 +69,27 @@ private def translateDiagram(types: Map[Name, Type],
         val r1 = extendTypes(res, name1, ObjectType.Cat(diag.cat))
         val r2 = extendTypes(r1, name2, ObjectType.Cat(diag.cat))
         extendTypes(r2, name3, MorphismType.HomSet(diag.cat, dom, cod))
-      case Nil => diag.adjacency.keys.map {
+      case Nil => diag.adjacency.keys.map{ _.content }.map {
         case Object.Base(name) => name -> ObjectType.Cat(diag.cat)
         case _ => throw IllegalArgumentException("Diagrams with constructions not yet implemented")
       }.toMap
       case _ => throw IllegalArgumentException("Diagrams with constructions not yet implemented")
 
-  def diagramDFS(): (Set[Object], Map[Object, Map[Object, Set[Morphism]]]) =
+  def diagramDFS(): (Set[Node], Map[Node, Map[Node, Set[Morphism]]]) =
 
     @tailrec
-    def linearVisit(front: List[Object], visited: Set[Object],
-                    eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
-      Map[Object, Map[Object, Set[Morphism]]]) =
+    def linearVisit(front: List[Node], visited: Set[Node],
+                    eqs: Map[Node, Map[Node, Set[Morphism]]]): (Set[Node],
+      Map[Node, Map[Node, Set[Morphism]]]) =
         front match
           case head :: tail =>
             val (nVisited, nEqs) = diagramDFS_r(head, visited, eqs)
             linearVisit(tail, nVisited, nEqs)
           case Nil => (visited, eqs)
 
-    def diagramDFS_r(node: Object, visited: Set[Object],
-                   eqs: Map[Object, Map[Object, Set[Morphism]]]): (Set[Object],
-      Map[Object, Map[Object, Set[Morphism]]]) =
+    def diagramDFS_r(node: Node, visited: Set[Node],
+                   eqs: Map[Node, Map[Node, Set[Morphism]]]): (Set[Node],
+      Map[Node, Map[Node, Set[Morphism]]]) =
 
         if visited.contains(node) then (visited, eqs)
         else
@@ -97,10 +98,10 @@ private def translateDiagram(types: Map[Name, Type],
             .map(_._2),
             visited + node, eqs)
 
-          val morphs: Map[Object, Set[Morphism]] = diag.adjacency(node).groupBy { _._2 }
+          val morphs: Map[Node, Set[Morphism]] = diag.adjacency(node).groupBy { _._2 }
             .map { (obj, set) => obj -> set.map { _._1 } }.withDefaultValue(Set())
 
-          val morphs2: Map[Object, Set[Morphism]] =
+          val morphs2: Map[Node, Set[Morphism]] =
             (for {
               (cod1, morphSet) <- morphs.toList
               morph1 <- morphSet
@@ -111,7 +112,7 @@ private def translateDiagram(types: Map[Name, Type],
               .map { (obj, map) => obj ->
                 map.map { (obj, morph) => morph }.toSet }.withDefaultValue(Set())
 
-          val morphsMerge: Map[Object, Set[Morphism]] =
+          val morphsMerge: Map[Node, Set[Morphism]] =
             (morphs.keys.toSet ++ morphs2.keys).map {
               num => num -> (morphs(num) ++ morphs2(num))
             }.toMap
@@ -124,8 +125,8 @@ private def translateDiagram(types: Map[Name, Type],
   // type all the edges and nodes
   val typesAdd: Map[Name, Type] =
     createTypes(
-      diag.adjacency.toList.flatMap{ (dom: Object, morphs: Set[(Morphism, Object)])
-      => morphs.toList.map { (morph: Morphism, cod: Object) => (dom, cod, morph) }
+      diag.adjacency.toList.flatMap{ (dom: Node, morphs: Set[(Morphism, Node)])
+      => morphs.toList.map { (morph: Morphism, cod: Node) => (dom.content, cod.content, morph) }
       }
     )
 
