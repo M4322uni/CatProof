@@ -129,7 +129,7 @@ class DerivationTree private(
         case RuleConstruct(vect: Vector[(Set[Condition], Condition)],
           _) if vect(attach._2)._2 == repeated =>
         case _ => throw DerivationError(s"the proof step at line $stepLine is invalid")
-      case _ => throw DerivationError(s"${attach._1}-${attach._2} is not a goal at line $stepLine")
+      case _ => throw DerivationError(s"${attach._1}-${attach._2+1} is not a goal at line $stepLine")
     val attachments2 = attachments + (attach -> from)
     DerivationTree(mainGoals, nodes, attachments2,
       objectives - attach, repeats + attach)
