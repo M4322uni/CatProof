@@ -120,7 +120,7 @@ object RuleConstruct:
         TypeJudgement(TCheck(
           Morphism.Parameter("f"),
           MorphismType.HomSet(
-            Base("Cat"),
+            Parameter("Cat"),
             Object.Parameter("A"),
             Object.Parameter("B")
           )
@@ -130,7 +130,7 @@ object RuleConstruct:
         TypeJudgement(TCheck(
           Morphism.Parameter("h"),
           MorphismType.HomSet(
-            Base("Cat"),
+            Parameter("Cat"),
             Object.Parameter("A"),
             Object.Parameter("B")
           )
@@ -140,7 +140,7 @@ object RuleConstruct:
         TypeJudgement(TCheck(
           Morphism.Parameter("g"),
           MorphismType.HomSet(
-            Base("Cat"),
+            Parameter("Cat"),
             Object.Parameter("B"),
             Object.Parameter("C")
           )
@@ -150,7 +150,7 @@ object RuleConstruct:
         TypeJudgement(TCheck(
           Morphism.Parameter("i"),
           MorphismType.HomSet(
-            Base("Cat"),
+            Parameter("Cat"),
             Object.Parameter("B"),
             Object.Parameter("C")
           )
