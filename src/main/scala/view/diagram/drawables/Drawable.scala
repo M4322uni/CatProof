@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Matteo Piscitello
+
 package view.diagram.drawables
 
 import scalafx.scene.canvas.GraphicsContext
